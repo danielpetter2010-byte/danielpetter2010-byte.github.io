@@ -177,6 +177,9 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
 .about{display:flex;flex-wrap:wrap;gap:8px}
 .btn-alt{padding:10px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;text-decoration:none;font-weight:500}
 .btn-alt:hover{border-color:var(--leaf-2)}
+.abc-card{order:-1}
+.abc-note{margin:12px 0 0;padding:10px 12px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);font-size:13.5px}
+.abc-note a{color:var(--leaf-2);font-weight:600}
 .offline{display:inline-block;background:var(--warn-bg);color:var(--warn);font-weight:600;border-radius:6px;padding:2px 8px}
 @media (max-width:760px){
   .tabs{position:fixed;top:auto;bottom:0;left:0;right:0;border-bottom:0;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -4px 16px rgba(0,0,0,.06)}
@@ -246,6 +249,7 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
       <header><h3 id="h-ver">Hoje na lavoura</h3><span class="hint" id="verCrop"></span></header>
       <div class="verdicts" id="verdicts"><div class="skeleton">Calculando…</div></div>
       <p class="hint" id="nextWindows" style="margin:12px 0 0"></p>
+      <p class="abc-note" id="abcNote" hidden>Você está na região atendida pela <b>Fundação ABC</b>. Associados das cooperativas Frísia, Castrolanda e Capal podem conferir as estações meteorológicas locais no <a href="#avisos" data-goto="avisos">smaABC</a>.</p>
     </section>
     <!-- Calendário -->
     <section class="card span-12" aria-labelledby="h-cal">
@@ -322,6 +326,27 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
         <a id="windyLink" href="https://www.windy.com/" target="_blank" rel="noopener"><b>Windy</b><span>Mapas animados de vento, chuva e nuvens para este ponto</span></a>
       </div>
       <p class="hint" style="margin:14px 0 0">Dados: <a href="https://open-meteo.com/" target="_blank" rel="noopener" style="color:inherit">Open-Meteo</a> (previsão, solo, ET₀ e modelos ECMWF/GFS/ICON) · radar <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" style="color:inherit">RainViewer</a> · mapa © OpenStreetMap. As janelas de manejo são uma orientação automática a partir da previsão e não substituem o ZARC, a assistência técnica nem a observação da lavoura.</p>
+    </section>
+
+    <section class="card span-12 abc-card" id="abcCard" aria-labelledby="h-abc" hidden>
+      <header><h3 id="h-abc">Fundação ABC — Campos Gerais</h3><span class="hint">Pesquisa agropecuária das cooperativas Frísia, Castrolanda e Capal · Castro (PR)</span></header>
+      <div class="links">
+        <a href="http://sma.fundacaoabc.org/" target="_blank" rel="noopener"><b>smaABC — portal</b><span>Monitoramento agrometeorológico com estações próprias da região. Acesso para associados.</span></a>
+        <a href="https://play.google.com/store/apps/details?id=org.fundacaoabc.smaabc" target="_blank" rel="noopener"><b>smaABC — app Android</b><span>Previsão e dados das estações no celular (associados)</span></a>
+        <a href="https://itunes.apple.com/br/app/smaabc/id1275179689?mt=8" target="_blank" rel="noopener"><b>smaABC — app iPhone</b><span>Mesmo sistema para iOS (associados)</span></a>
+        <a href="https://fundacaoabc.org/areas-pesquisa" target="_blank" rel="noopener"><b>Áreas de pesquisa</b><span>Época de semeadura, cultivares e sanidade de soja, trigo, feijão, cevada e forrageiras</span></a>
+        <a href="https://fundacaoabc.org/revistas" target="_blank" rel="noopener"><b>Revista FABC</b><span>Resultados de pesquisa e recomendações técnicas</span></a>
+        <a href="https://fundacaoabc.org/eventos" target="_blank" rel="noopener"><b>Eventos e dias de campo</b><span>Agenda da Fundação ABC na região</span></a>
+      </div>
+    </section>
+
+    <section class="card span-12" aria-labelledby="h-pontas">
+      <header><h3 id="h-pontas">Escolha da ponta de pulverização</h3><span class="hint">App gratuito da Fundação ABC, para qualquer região</span></header>
+      <p style="margin:0 0 12px;font-size:14px">O <b>abcPontas</b> indica o modelo de ponta mais adequado para cada aplicação. Use junto com as janelas de pulverização da aba Hoje.</p>
+      <div class="about">
+        <a class="btn-alt" href="https://play.google.com/store/apps/details?id=com.fundacaoabc.abcpontas" target="_blank" rel="noopener">abcPontas no Google Play</a>
+        <a class="btn-alt" href="https://itunes.apple.com/br/app/abcpontas/id1253447078?mt=8" target="_blank" rel="noopener">abcPontas na App Store</a>
+      </div>
     </section>
 
     <section class="card span-12" aria-labelledby="h-app">
@@ -573,9 +598,19 @@ function setLocation(loc){
   $("#windyLink").href = `https://www.windy.com/?rain,${loc.lat},${loc.lon},9`;
   if (map) { map.setView([loc.lat, loc.lon], Math.max(map.getZoom(), 7)); marker.setLatLng([loc.lat, loc.lon]); }
   buildCropSelect();
+  updateABC();
   if (!ufOf(loc)) identifyPlace(loc);
   load();
 }
+
+/* Região da Fundação ABC: Campos Gerais do Paraná, até ~130 km de Castro (PR) */
+function nearABC(loc){
+  if (!loc) return false;
+  const R = 6371, r = x => x * Math.PI / 180, la1 = r(-24.79), la2 = r(loc.lat), dla = la2 - la1, dlo = r(loc.lon - (-50.01));
+  const a = Math.sin(dla / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dlo / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a)) <= 130;
+}
+function updateABC(){ const on = nearABC(state.loc); $("#abcCard").hidden = !on; $("#abcNote").hidden = !on; }
 
 /* Para "Minha localização" e toques no mapa: descobre o município e o estado */
 async function identifyPlace(loc){
@@ -771,7 +806,8 @@ function renderAgro(){
 
 function renderDetail(){
   const d = state.days[state.sel]; if (!d) return;
-  const blk = (t, o) => `<div><h4>${t} — <span style="color:var(--${o.s === "na" ? "muted" : o.s})">${ST[o.s]}</span></h4><ul>${o.r.map(x => `<li>${x}</li>`).join("")}</ul></div>`;
+  const PONTAS = `<a href="https://play.google.com/store/apps/details?id=com.fundacaoabc.abcpontas" target="_blank" rel="noopener">Escolher a ponta certa (app abcPontas, grátis)</a>`;
+  const blk = (t, o) => `<div><h4>${t} — <span style="color:var(--${o.s === "na" ? "muted" : o.s})">${ST[o.s]}</span></h4><ul>${o.r.map(x => `<li>${x}</li>`).join("")}${t === "Pulverização" ? `<li>${PONTAS}</li>` : ""}</ul></div>`;
   $("#detail").innerHTML = `<div class="label" style="margin-bottom:8px">${state.sel === 0 ? "Hoje" : dayLabel(d.day)} · máx ${fmt(d.tmax,0)}° / mín ${fmt(d.tmin,0)}° · chuva ${fmt(d.rain,1)} mm</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">${blk("Plantio", d.plantio)}${blk("Colheita", d.colheita)}${blk("Pulverização", d.pulv)}${blk("Geada", d.geada)}</div>`;
 }
@@ -938,6 +974,7 @@ document.querySelectorAll(".tabs a").forEach(a => a.addEventListener("click", e 
   showTab(); window.scrollTo({ top: 0 });
 }));
 addEventListener("hashchange", showTab);
+document.addEventListener("click", e => { const g = e.target.closest("[data-goto]"); if (g) { e.preventDefault(); $("#t-" + g.dataset.goto).click(); } });
 showTab();
 
 /* ---------- App instalável ---------- */
