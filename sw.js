@@ -1,6 +1,6 @@
 /* Tempo da Lavoura — service worker
    Ao publicar uma versão nova do site, aumente o número abaixo (v1 → v2…) para limpar o cache antigo. */
-const VERSION = "lavoura-v1";
+const VERSION = "lavoura-v2";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "politica-privacidade.html", "icons/icon-192.png", "icons/icon-512.png"];
 const LIVE = ["api.open-meteo.com", "geocoding-api.open-meteo.com", "api.rainviewer.com", "photon.komoot.io", "nominatim.openstreetmap.org", "tile.openstreetmap.org", "tilecache.rainviewer.com"];
 

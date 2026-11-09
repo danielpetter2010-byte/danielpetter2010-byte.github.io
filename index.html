@@ -209,11 +209,7 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
       </div>
       <button class="btn" id="qGo" type="button">Buscar</button>
       <button class="btn" id="geo" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Minha localização</button>
-      <select id="crop" aria-label="Cultura">
-        <option value="soja">Soja</option><option value="milho">Milho</option><option value="feijao">Feijão</option>
-        <option value="trigo">Trigo</option><option value="arroz">Arroz (sequeiro)</option><option value="algodao">Algodão</option>
-        <option value="cafe">Café (mudas)</option><option value="cana">Cana-de-açúcar</option><option value="horta">Hortaliças</option>
-      </select>
+      <select id="crop" aria-label="Cultura"></select>
     </div>
   </div>
 </header>
@@ -358,20 +354,93 @@ const WMO = {0:"Céu limpo",1:"Predomínio de sol",2:"Parcialmente nublado",3:"N
  82:"Pancadas fortes",85:"Pancadas de neve",86:"Pancadas de neve fortes",95:"Trovoadas",96:"Trovoadas com granizo",99:"Trovoadas com granizo forte"};
 const dirTxt = d => d == null ? "" : ["N","NE","L","SE","S","SO","O","NO"][Math.round(d / 45) % 8];
 
+/* Culturas: tSolo = temperatura mínima do solo para boa germinação/pegamento (°C), tSoloMax = máxima indicada,
+   chuva5 = chuva desejada nos 5 dias após o plantio (mm), geadaTol = tolera geada leve, irrigado = não depende de chuva */
 const CROPS = {
-  soja:{nome:"Soja", tSolo:20, chuva5:20},
-  milho:{nome:"Milho", tSolo:16, chuva5:20},
-  feijao:{nome:"Feijão", tSolo:18, chuva5:15},
-  trigo:{nome:"Trigo", tSolo:10, tSoloMax:25, chuva5:15},
-  arroz:{nome:"Arroz (sequeiro)", tSolo:20, chuva5:25},
-  algodao:{nome:"Algodão", tSolo:18, chuva5:20},
-  cafe:{nome:"Café (mudas)", tSolo:18, chuva5:20},
-  cana:{nome:"Cana-de-açúcar", tSolo:20, chuva5:20},
-  horta:{nome:"Hortaliças", tSolo:12, tSoloMax:30, chuva5:10}
+  // Grãos de verão
+  soja:{nome:"Soja", tSolo:20, chuva5:20, cat:"Grãos e fibras"},
+  milho:{nome:"Milho (verão)", tSolo:16, chuva5:20, cat:"Grãos e fibras"},
+  milho2:{nome:"Milho safrinha", tSolo:18, chuva5:20, cat:"Grãos e fibras"},
+  feijao:{nome:"Feijão", tSolo:18, chuva5:15, cat:"Grãos e fibras"},
+  caupi:{nome:"Feijão-caupi (de corda)", tSolo:20, chuva5:12, cat:"Grãos e fibras"},
+  arroz:{nome:"Arroz de sequeiro", tSolo:20, chuva5:25, cat:"Grãos e fibras"},
+  arrozirr:{nome:"Arroz irrigado", tSolo:16, chuva5:0, irrigado:true, cat:"Grãos e fibras"},
+  sorgo:{nome:"Sorgo", tSolo:18, chuva5:15, cat:"Grãos e fibras"},
+  milheto:{nome:"Milheto", tSolo:18, chuva5:12, cat:"Grãos e fibras"},
+  algodao:{nome:"Algodão", tSolo:18, chuva5:20, cat:"Grãos e fibras"},
+  girassol:{nome:"Girassol", tSolo:10, chuva5:15, cat:"Grãos e fibras"},
+  amendoim:{nome:"Amendoim", tSolo:20, chuva5:15, cat:"Grãos e fibras"},
+  gergelim:{nome:"Gergelim", tSolo:21, chuva5:15, cat:"Grãos e fibras"},
+  // Grãos de inverno
+  trigo:{nome:"Trigo", tSolo:10, tSoloMax:25, chuva5:15, geadaTol:true, cat:"Grãos de inverno"},
+  aveia:{nome:"Aveia", tSolo:8, tSoloMax:25, chuva5:12, geadaTol:true, cat:"Grãos de inverno"},
+  cevada:{nome:"Cevada", tSolo:8, tSoloMax:25, chuva5:12, geadaTol:true, cat:"Grãos de inverno"},
+  triticale:{nome:"Triticale", tSolo:8, tSoloMax:25, chuva5:12, geadaTol:true, cat:"Grãos de inverno"},
+  canola:{nome:"Canola", tSolo:10, tSoloMax:25, chuva5:12, geadaTol:true, cat:"Grãos de inverno"},
+  // Perenes e semiperenes (plantio de mudas)
+  cafe:{nome:"Café (mudas)", tSolo:18, chuva5:20, cat:"Perenes e frutas"},
+  cana:{nome:"Cana-de-açúcar", tSolo:20, chuva5:20, cat:"Perenes e frutas"},
+  mandioca:{nome:"Mandioca", tSolo:18, chuva5:15, cat:"Perenes e frutas"},
+  citros:{nome:"Laranja e citros (mudas)", tSolo:18, chuva5:20, cat:"Perenes e frutas"},
+  banana:{nome:"Banana (mudas)", tSolo:20, chuva5:20, cat:"Perenes e frutas"},
+  cacau:{nome:"Cacau (mudas)", tSolo:22, chuva5:20, cat:"Perenes e frutas"},
+  acai:{nome:"Açaí (mudas)", tSolo:22, chuva5:20, cat:"Perenes e frutas"},
+  coco:{nome:"Coco (mudas)", tSolo:22, chuva5:20, cat:"Perenes e frutas"},
+  pimenta:{nome:"Pimenta-do-reino (mudas)", tSolo:22, chuva5:20, cat:"Perenes e frutas"},
+  mamao:{nome:"Mamão (mudas)", tSolo:22, chuva5:15, cat:"Perenes e frutas"},
+  abacaxi:{nome:"Abacaxi", tSolo:20, chuva5:15, cat:"Perenes e frutas"},
+  manga:{nome:"Manga (mudas)", tSolo:20, chuva5:15, cat:"Perenes e frutas"},
+  uva:{nome:"Uva (mudas)", tSolo:15, chuva5:15, cat:"Perenes e frutas"},
+  maca:{nome:"Maçã (mudas)", tSolo:10, chuva5:15, geadaTol:true, cat:"Perenes e frutas"},
+  ervamate:{nome:"Erva-mate (mudas)", tSolo:15, chuva5:15, cat:"Perenes e frutas"},
+  fumo:{nome:"Fumo/tabaco (mudas)", tSolo:16, chuva5:15, cat:"Perenes e frutas"},
+  // Hortaliças
+  horta:{nome:"Hortaliças folhosas", tSolo:10, tSoloMax:28, chuva5:10, cat:"Hortaliças"},
+  tomate:{nome:"Tomate", tSolo:15, tSoloMax:30, chuva5:10, cat:"Hortaliças"},
+  batata:{nome:"Batata", tSolo:10, tSoloMax:25, chuva5:12, cat:"Hortaliças"},
+  cebola:{nome:"Cebola", tSolo:10, tSoloMax:30, chuva5:10, geadaTol:true, cat:"Hortaliças"},
+  melancia:{nome:"Melancia", tSolo:21, chuva5:12, cat:"Hortaliças"},
+  melao:{nome:"Melão", tSolo:21, chuva5:12, cat:"Hortaliças"},
+  // Pastagens e floresta
+  pasto:{nome:"Pastagem (capins tropicais)", tSolo:18, chuva5:20, cat:"Pastagem e floresta"},
+  pastoinv:{nome:"Pastagem de inverno (azevém)", tSolo:8, tSoloMax:25, chuva5:12, geadaTol:true, cat:"Pastagem e floresta"},
+  eucalipto:{nome:"Eucalipto (mudas)", tSolo:15, chuva5:20, cat:"Pastagem e floresta"}
 };
 
+/* Regiões e culturas mais comuns em cada uma (ordem = mais plantadas primeiro) */
+const REGIOES = {
+  N:{nome:"Norte", ufs:["AC","AM","AP","PA","RO","RR","TO"], culturas:["soja","milho","mandioca","acai","cacau","banana","arroz","caupi","pimenta","cafe","abacaxi","pasto"]},
+  NE:{nome:"Nordeste", ufs:["AL","BA","CE","MA","PB","PE","PI","RN","SE"], culturas:["soja","milho","caupi","feijao","mandioca","algodao","cana","cacau","coco","banana","manga","uva","melao","melancia","mamao","abacaxi","cebola","sorgo","pasto"]},
+  CO:{nome:"Centro-Oeste", ufs:["DF","GO","MS","MT"], culturas:["soja","milho2","milho","algodao","feijao","cana","sorgo","milheto","girassol","gergelim","arroz","tomate","eucalipto","pasto"]},
+  SE:{nome:"Sudeste", ufs:["ES","MG","RJ","SP"], culturas:["cafe","cana","citros","soja","milho","milho2","feijao","amendoim","banana","batata","tomate","mamao","pimenta","horta","eucalipto","pasto"]},
+  S:{nome:"Sul", ufs:["PR","RS","SC"], culturas:["soja","milho","milho2","trigo","arrozirr","feijao","aveia","cevada","triticale","canola","fumo","uva","maca","ervamate","batata","cebola","eucalipto","pastoinv","pasto"]}
+};
+function ufOf(loc){
+  if (!loc) return null;
+  if (loc.uf && UF[loc.uf]) return loc.uf;
+  const m = (loc.region || "").match(/\b([A-Z]{2})\b/g) || [];
+  const hit = m.find(x => UF[x]); if (hit) return hit;
+  const st = (loc.region || "").split("·")[0].trim(); return UFBYNAME[norm(st)] || null;
+}
+function regionOf(loc){ const uf = ufOf(loc); return uf ? Object.keys(REGIOES).find(k => REGIOES[k].ufs.includes(uf)) : null; }
+
+function buildCropSelect(){
+  const sel = $("#crop"), reg = regionOf(state.loc);
+  if (!CROPS[state.crop]) state.crop = reg ? REGIOES[reg].culturas[0] : "soja";
+  const top = reg ? REGIOES[reg].culturas : [];
+  const opt = k => `<option value="${k}">${CROPS[k].nome}</option>`;
+  let h = "";
+  if (reg) h += `<optgroup label="Mais plantadas no ${REGIOES[reg].nome}">${top.map(opt).join("")}</optgroup>`;
+  const cats = [...new Set(Object.values(CROPS).map(c => c.cat))];
+  for (const c of cats) {
+    const ks = Object.keys(CROPS).filter(k => CROPS[k].cat === c && !top.includes(k)).sort((a, b) => CROPS[a].nome.localeCompare(CROPS[b].nome, "pt"));
+    if (ks.length) h += `<optgroup label="${reg ? "Outras: " : ""}${c}">${ks.map(opt).join("")}</optgroup>`;
+  }
+  sel.innerHTML = h; sel.value = state.crop;
+}
+
 const state = { loc:null, data:null, models:null, crop: store.get("tl_crop") || "soja", sel:0, charts:{}, days:[] };
-$("#crop").value = state.crop;
+buildCropSelect();
 
 function setStatus(msg, err){ const s = $("#status"); s.textContent = msg; s.classList.toggle("err", !!err); }
 
@@ -503,7 +572,34 @@ function setLocation(loc){
   $("#locMeta").textContent = `${loc.region ? loc.region + " · " : ""}${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`;
   $("#windyLink").href = `https://www.windy.com/?rain,${loc.lat},${loc.lon},9`;
   if (map) { map.setView([loc.lat, loc.lon], Math.max(map.getZoom(), 7)); marker.setLatLng([loc.lat, loc.lon]); }
+  buildCropSelect();
+  if (!ufOf(loc)) identifyPlace(loc);
   load();
+}
+
+/* Para "Minha localização" e toques no mapa: descobre o município e o estado */
+async function identifyPlace(loc){
+  let name = null, state_ = null, cc = null;
+  try {
+    const j = await getJSON(`https://photon.komoot.io/reverse?lat=${loc.lat}&lon=${loc.lon}&limit=1`);
+    const p = j.features && j.features[0] && j.features[0].properties;
+    if (p) { name = p.city || p.county || p.name || null; state_ = p.state || null; cc = (p.countrycode || "").toUpperCase(); }
+  } catch {}
+  if (!state_) {
+    try {
+      const a = (await getJSON(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=pt-BR&lat=${loc.lat}&lon=${loc.lon}`)).address || {};
+      name = a.city || a.town || a.village || a.municipality || name; state_ = a.state || null; cc = (a.country_code || "").toUpperCase();
+    } catch {}
+  }
+  if (state.loc !== loc || !state_) return;
+  const uf = UFBYNAME[norm(state_)] || null;
+  if (name && /^(Minha localização|Ponto no mapa|Ponto informado)$/.test(loc.name)) loc.name = name;
+  loc.uf = uf; loc.region = [uf || state_, cc].filter(Boolean).join(" · ");
+  store.set("tl_loc", loc);
+  $("#locName").textContent = loc.name;
+  $("#locMeta").textContent = `${loc.region} · ${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`;
+  buildCropSelect();
+  if (state.data) renderAgro();
 }
 
 async function load(){
@@ -567,13 +663,17 @@ function evalDay(P, i){
   let pl = "warn";
   const moistOk = soilM != null ? soilM >= 0.22 : (past3 + rain) >= 15;
   const tOk = soilT == null || (soilT >= crop.tSolo && (!crop.tSoloMax || soilT <= crop.tSoloMax));
-  if (soilM != null) pr.push(`Umidade do solo (3–9 cm): ${fmt(soilM, 2)} m³/m³ ${soilM >= 0.22 ? "— boa para germinar" : soilM < 0.15 ? "— solo seco" : "— moderada"}`);
+  const frostLim = crop.geadaTol ? -2 : 3;
+  if (crop.irrigado) pr.push(`${crop.nome}: a umidade vem da irrigação; a avaliação considera temperatura, chuva forte e geada`);
+  else if (soilM != null) pr.push(`Umidade do solo (3–9 cm): ${fmt(soilM, 2)} m³/m³ ${soilM >= 0.22 ? "— boa para germinar" : soilM < 0.15 ? "— solo seco" : "— moderada"}`);
   else pr.push(`Chuva nos 3 dias anteriores + no dia: ${fmt(past3 + rain, 1)} mm (umidade do solo sem previsão para esta data)`);
-  pr.push(`Chuva prevista nos 5 dias a partir daqui: ${fmt(next5, 1)} mm (ideal ≥ ${crop.chuva5} mm para ${crop.nome})`);
+  if (!crop.irrigado) pr.push(`Chuva prevista nos 5 dias a partir daqui: ${fmt(next5, 1)} mm (ideal ≥ ${crop.chuva5} mm para ${crop.nome})`);
   if (soilT != null) pr.push(`Temperatura do solo (6 cm, de dia): ${fmt(soilT, 1)} °C (mínimo indicado ${crop.tSolo} °C${crop.tSoloMax ? `, máximo ${crop.tSoloMax} °C` : ""})`);
   if (heavy >= 40) { pl = "bad"; pr.push(`Chuva forte (${fmt(heavy,0)} mm em 1 dia): risco de erosão, encharcamento e semente lavada`); }
-  else if (tmin != null && tmin <= 3) { pl = "bad"; pr.push(`Mínima de ${fmt(tmin,1)} °C: risco de geada para plântulas`); }
+  else if (tmin != null && tmin <= frostLim) { pl = "bad"; pr.push(`Mínima de ${fmt(tmin,1)} °C: risco de geada para plântulas`); }
   else if (soilT != null && soilT < crop.tSolo - 2) { pl = "bad"; pr.push("Solo frio demais: germinação lenta e desuniforme"); }
+  else if (soilT != null && crop.tSoloMax && soilT > crop.tSoloMax + 3) { pl = "bad"; pr.push(`Solo quente demais para ${crop.nome}: germinação e pegamento prejudicados`); }
+  else if (crop.irrigado) { if (tOk && rain < 30) pl = "good"; }
   else if (!moistOk && next5 < crop.chuva5 * 0.5) { pl = "bad"; pr.push("Pouca água no solo e pouca chuva à frente: risco de falha na germinação"); }
   else if (moistOk && next5 >= crop.chuva5 && tOk && rain < 30) { pl = "good"; }
   out.plantio = { s: pl, r: pr };
@@ -604,8 +704,9 @@ function evalDay(P, i){
   // Geada
   const gr = [`Temperatura mínima do ar: ${fmt(tmin,1)} °C`];
   let ge = "good";
-  if (tmin != null && tmin <= 0) { ge = "bad"; gr.push("Risco alto de geada: proteja mudas e evite plantio"); }
-  else if (tmin != null && tmin <= 3) { ge = "warn"; gr.push("Possível geada em baixadas (relva pode ficar 3–5 °C mais fria que o ar)"); }
+  const tol = crop.geadaTol;
+  if (tmin != null && tmin <= (tol ? -3 : 0)) { ge = "bad"; gr.push(tol ? `Geada forte: pode causar dano mesmo em ${crop.nome}, principalmente na floração` : "Risco alto de geada: proteja mudas e evite plantio"); }
+  else if (tmin != null && tmin <= 3) { ge = "warn"; gr.push(tol ? `Possível geada leve. ${crop.nome} costuma tolerar, mas a floração é sensível` : "Possível geada em baixadas (relva pode ficar 3–5 °C mais fria que o ar)"); }
   else gr.push("Sem risco de geada");
   out.geada = { s: ge, r: gr };
   return out;
@@ -642,7 +743,7 @@ function renderAgro(){
   const crop = CROPS[state.crop];
   state.days = [];
   for (let k = 0; k < 14 && P.ti + k < P.D.time.length; k++) state.days.push(evalDay(P, P.ti + k));
-  $("#verCrop").textContent = `Cultura: ${crop.nome}`;
+  const rg = regionOf(state.loc); $("#verCrop").textContent = `Cultura: ${crop.nome}${rg ? " · região " + REGIOES[rg].nome : ""}`;
   const t = state.days[0];
   const v = (title, o, extra) => `<div class="verdict v-${o.s}"><div class="t"><span class="pill ${o.s === "na" ? "" : o.s}">${ST[o.s]}</span>${title}</div><p>${extra}</p></div>`;
   $("#verdicts").innerHTML =
