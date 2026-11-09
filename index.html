@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tempo da Lavoura</title>
+<meta name="description" content="Clima, radar de chuva, solo e janelas de plantio, colheita e pulverização para a sua região.">
+<meta name="theme-color" content="#1f4d2b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lavoura">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* Layout: caderno de campo — faixa verde de cabeçalho, painel em grade de cartões técnicos, dados em fonte mono */
+:root{
+  --bg:#eef1ec; --surface:#ffffff; --surface-2:#f6f8f4; --ink:#17201a; --muted:#5b6a5f; --line:#d5ddd3;
+  --leaf:#1f4d2b; --leaf-2:#2f7a43; --rain:#2563a8; --rain-soft:#cfe0f3; --sun:#c0661a;
+  --good:#2f7a43; --good-bg:#dcefdf; --warn:#a86a00; --warn-bg:#fbedc9; --bad:#b3261e; --bad-bg:#f8d9d6; --na:#e3e7e1;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1511; --surface:#172019; --surface-2:#1d281f; --ink:#e6ede6; --muted:#9aab9e; --line:#2b3a2f;
+  --leaf:#153821; --leaf-2:#5cbf78; --rain:#6ea8ea; --rain-soft:#1c3350; --sun:#eb9a52;
+  --good:#6fd08c; --good-bg:#1d3b26; --warn:#f0bd52; --warn-bg:#3b3015; --bad:#f2867d; --bad-bg:#47201d; --na:#243026;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0f1511; --surface:#172019; --surface-2:#1d281f; --ink:#e6ede6; --muted:#9aab9e; --line:#2b3a2f;
+  --leaf:#153821; --leaf-2:#5cbf78; --rain:#6ea8ea; --rain-soft:#1c3350; --sun:#eb9a52;
+  --good:#6fd08c; --good-bg:#1d3b26; --warn:#f0bd52; --warn-bg:#3b3015; --bad:#f2867d; --bad-bg:#47201d; --na:#243026;
+  color-scheme:dark;}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--leaf-2);outline-offset:2px}
+
+/* Cabeçalho */
+header.top{background:var(--leaf);color:#f1f7f0;padding-top:env(safe-area-inset-top,0px)}
+header.top .wrap{padding-block:18px 20px;display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:12px;align-items:center}
+.brand svg{flex:none}
+.brand h1{font-size:24px;font-weight:800;color:#fff}
+.brand p{margin:0;font-size:13px;color:#bfd6c3}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1 1 520px;justify-content:flex-end}
+.search{position:relative;flex:1 1 260px;max-width:420px}
+.search input{width:100%;padding:10px 12px 10px 38px;border-radius:8px;border:1px solid #3d6b49;background:#173d22;color:#fff}
+.search input::placeholder{color:#9fbba6}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.75}
+.results{position:absolute;z-index:1000;top:calc(100% + 4px);left:0;right:0;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.18);overflow:hidden}
+.results button{display:block;width:100%;text-align:left;padding:9px 12px;border:0;background:none;cursor:pointer;border-bottom:1px solid var(--line)}
+.results button:hover,.results button:focus{background:var(--surface-2)}
+.results small{color:var(--muted)}
+.btn{padding:10px 14px;border-radius:8px;border:1px solid #3d6b49;background:#2b5f38;color:#fff;cursor:pointer;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.btn:hover{background:#346f43}
+.top select{padding:10px 12px;border-radius:8px;border:1px solid #3d6b49;background:#173d22;color:#fff}
+
+/* Faixa de local */
+.locbar{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding-block:18px 6px}
+.locbar h2{font-size:28px;font-weight:800}
+.locbar .meta{color:var(--muted);font-size:13px}
+.status{font-size:13px;color:var(--muted)}
+.status.err{color:var(--bad);font-weight:600}
+
+/* Grade */
+main .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;padding-block:10px 40px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.card > header{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.card h3{font-size:18px;font-weight:700}
+.card .hint{font-size:12.5px;color:var(--muted)}
+.span-12{grid-column:span 12}.span-7{grid-column:span 7}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-4{grid-column:span 4}.span-8{grid-column:span 8}
+@media (max-width:980px){.span-7,.span-5,.span-6,.span-4,.span-8{grid-column:span 12}}
+
+/* Agora */
+.now{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.now .temp{font-family:var(--f-display);font-size:64px;font-weight:800;line-height:1}
+.now .desc{font-size:17px;font-weight:600}
+.now .feels{color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:16px}
+.stat{background:var(--surface-2);border-radius:8px;padding:10px 12px}
+.stat .v{font-family:var(--f-mono);font-size:19px;font-weight:500;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:12px;color:var(--muted)}
+
+/* Veredito */
+.verdicts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.verdict{border-radius:8px;padding:12px 14px;border:1px solid transparent}
+.verdict .t{display:flex;align-items:center;gap:8px;font-weight:700;font-family:var(--f-display);font-size:16px}
+.verdict p{margin:6px 0 0;font-size:13px}
+.v-good{background:var(--good-bg);color:var(--ink)} .v-good .t{color:var(--good)}
+.v-warn{background:var(--warn-bg)} .v-warn .t{color:var(--warn)}
+.v-bad{background:var(--bad-bg)} .v-bad .t{color:var(--bad)}
+.v-na{background:var(--na)}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+.pill.good{background:var(--good);color:var(--surface)} .pill.warn{background:var(--warn);color:var(--surface)} .pill.bad{background:var(--bad);color:var(--surface)}
+
+/* Calendário de janelas */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.cal{border-collapse:separate;border-spacing:3px;min-width:760px;width:100%}
+table.cal th{font-size:12px;font-weight:600;color:var(--muted);padding:2px 4px;text-align:center;white-space:nowrap}
+table.cal th.row{text-align:left;color:var(--ink);font-size:13px;padding-right:8px}
+table.cal td{height:34px;border-radius:5px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;min-width:42px}
+table.cal td.good{background:var(--good-bg);color:var(--good)}
+table.cal td.warn{background:var(--warn-bg);color:var(--warn)}
+table.cal td.bad{background:var(--bad-bg);color:var(--bad)}
+table.cal td.na{background:var(--na);color:var(--muted)}
+table.cal td.sel{outline:2px solid var(--ink);outline-offset:-2px}
+table.cal th.day.sel{color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.detail{margin-top:14px;background:var(--surface-2);border-radius:8px;padding:12px 14px;font-size:13.5px}
+.detail h4{margin:0 0 6px;font-family:var(--f-display);font-size:15px}
+.detail ul{margin:4px 0 0;padding-left:18px}
+.detail li{margin:2px 0}
+
+/* Radar */
+#map{height:440px;border-radius:8px;border:1px solid var(--line);z-index:0}
+.radarbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+.radarbar button{padding:7px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface-2);cursor:pointer}
+.radarbar input[type=range]{flex:1 1 160px;accent-color:var(--rain)}
+.scale{display:flex;height:8px;border-radius:4px;overflow:hidden;flex:1 1 180px;max-width:260px}
+.scale span{flex:1}
+
+/* Gráficos */
+.chartbox{position:relative;height:280px}
+.chartbox.sm{height:220px}
+
+/* Tabelas */
+table.data{border-collapse:collapse;width:100%;min-width:640px;font-size:13px}
+table.data th,table.data td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+table.data th:first-child,table.data td:first-child{text-align:left}
+table.data th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+table.data td{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+table.data td.txt{font-family:var(--f-body)}
+.rainbar{display:inline-block;height:8px;background:var(--rain);border-radius:2px;vertical-align:middle;margin-left:6px}
+
+/* Solo */
+.soil{display:grid;gap:8px}
+.soil-row{display:grid;grid-template-columns:88px 1fr 70px;gap:10px;align-items:center;font-size:13px}
+.soil-track{height:14px;background:var(--surface-2);border-radius:7px;overflow:hidden;position:relative}
+.soil-fill{height:100%;background:linear-gradient(90deg,#b7894f,var(--rain));border-radius:7px}
+.soil-note{font-size:12.5px;color:var(--muted);margin-top:8px}
+
+.balance{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.links a{display:block;padding:12px 14px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--surface-2)}
+.links a:hover{border-color:var(--leaf-2)}
+.links a b{display:block;font-family:var(--f-display)}
+.links a span{font-size:12.5px;color:var(--muted)}
+footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
+.skeleton{color:var(--muted);font-size:13px;padding:30px 0;text-align:center}
+
+/* Abas: faixa fixa no topo (computador) e barra inferior (celular) */
+.tabs{position:sticky;top:0;z-index:600;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.tabs-in{max-width:1240px;margin:0 auto;display:flex;gap:2px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.tabs a{display:flex;align-items:center;gap:8px;padding:13px 16px 11px;color:var(--muted);text-decoration:none;font-weight:600;font-size:14.5px;border-bottom:3px solid transparent;-webkit-tap-highlight-color:transparent}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current="page"]{color:var(--leaf-2);border-bottom-color:var(--leaf-2)}
+.tabs svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.panel[hidden]{display:none!important}
+#tab-radar #map{height:min(68vh,640px)}
+.about{display:flex;flex-wrap:wrap;gap:8px}
+.btn-alt{padding:10px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;text-decoration:none;font-weight:500}
+.btn-alt:hover{border-color:var(--leaf-2)}
+.offline{display:inline-block;background:var(--warn-bg);color:var(--warn);font-weight:600;border-radius:6px;padding:2px 8px}
+@media (max-width:760px){
+  .tabs{position:fixed;top:auto;bottom:0;left:0;right:0;border-bottom:0;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -4px 16px rgba(0,0,0,.06)}
+  .tabs-in{gap:0;padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}
+  .tabs a{flex:1 1 0;min-width:0;flex-direction:column;gap:3px;padding:8px 2px 7px;font-size:11px;border-bottom:0;border-top:3px solid transparent;text-align:center;white-space:nowrap}
+  .tabs a[aria-current="page"]{border-top-color:var(--leaf-2)}
+  .tabs svg{width:22px;height:22px}
+  body{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+  header.top .wrap{padding-block:12px 14px}
+  .brand p{display:none}
+  #tab-radar #map{height:calc(100vh - 330px);min-height:300px}
+}
+@media (max-width:560px){.now .temp{font-size:52px}#map{height:340px}.locbar h2{font-size:23px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#2f7a43"/><path d="M20 30V17" stroke="#e8f3e6" stroke-width="2.4" stroke-linecap="round"/><path d="M20 21c-5 0-8-3-8-8 5 0 8 3 8 8Z" fill="#e8f3e6"/><path d="M20 18c4.5 0 7.5-2.8 7.5-7.5-4.5 0-7.5 2.8-7.5 7.5Z" fill="#bfe3c4"/><path d="M27 24l-1.5 3M31 22l-1.5 3M23 25.5l-1 2" stroke="#8fc3f0" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <div><h1>Tempo da Lavoura</h1><p>Clima, radar, solo e janelas de manejo para a sua região</p></div>
+    </div>
+    <div class="controls">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="q" type="search" enterkeyhint="search" placeholder="Município (ex.: Rio Verde - GO) ou coordenadas" autocomplete="off" aria-label="Buscar município">
+        <div id="results" class="results" hidden></div>
+      </div>
+      <button class="btn" id="qGo" type="button">Buscar</button>
+      <button class="btn" id="geo" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Minha localização</button>
+      <select id="crop" aria-label="Cultura">
+        <option value="soja">Soja</option><option value="milho">Milho</option><option value="feijao">Feijão</option>
+        <option value="trigo">Trigo</option><option value="arroz">Arroz (sequeiro)</option><option value="algodao">Algodão</option>
+        <option value="cafe">Café (mudas)</option><option value="cana">Cana-de-açúcar</option><option value="horta">Hortaliças</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Seções do aplicativo">
+  <div class="tabs-in">
+    <a href="#hoje" id="t-hoje"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 20v-6M12 20V9M17 20v-9"/><path d="M12 9c0-3 2-5 5-5 0 3-2 5-5 5Zm0 0c0-2.4-1.6-4-4-4 0 2.4 1.6 4 4 4Z"/></svg><span>Hoje</span></a>
+    <a href="#radar" id="t-radar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 19 6"/></svg><span>Radar</span></a>
+    <a href="#previsao" id="t-previsao"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 1 1 .7-7.9A5.5 5.5 0 0 1 18 11a3 3 0 0 1 0 6Z"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2"/></svg><span>Previsão</span></a>
+    <a href="#solo" id="t-solo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18M3 15h18M3 20h18"/><path d="M12 3c2 2.5 3 4 3 5.2A3 3 0 0 1 9 8.2C9 7 10 5.5 12 3Z"/></svg><span>Solo e água</span></a>
+    <a href="#avisos" id="t-avisos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20Z"/><path d="M12 10v4M12 17v.5"/></svg><span>Avisos</span></a>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div class="locbar">
+    <h2 id="locName">Carregando…</h2>
+    <span class="meta num" id="locMeta"></span>
+    <span class="status" id="status">Buscando dados…</span>
+  </div>
+
+  <div class="panel grid" id="tab-hoje" role="tabpanel" aria-labelledby="t-hoje">
+    <!-- Agora -->
+    <section class="card span-5" aria-labelledby="h-now">
+      <header><h3 id="h-now">Agora</h3><span class="hint" id="nowTime"></span></header>
+      <div class="now">
+        <div class="temp num" id="nowTemp">--°</div>
+        <div><div class="desc" id="nowDesc">—</div><div class="feels" id="nowFeels"></div></div>
+      </div>
+      <div class="stats" id="nowStats"></div>
+    </section>
+    <!-- Veredito -->
+    <section class="card span-7" aria-labelledby="h-ver">
+      <header><h3 id="h-ver">Hoje na lavoura</h3><span class="hint" id="verCrop"></span></header>
+      <div class="verdicts" id="verdicts"><div class="skeleton">Calculando…</div></div>
+      <p class="hint" id="nextWindows" style="margin:12px 0 0"></p>
+    </section>
+    <!-- Calendário -->
+    <section class="card span-12" aria-labelledby="h-cal">
+      <header><h3 id="h-cal">Janelas de manejo — próximos 14 dias</h3><span class="hint">Toque em um dia para ver o motivo</span></header>
+      <div class="scroll"><table class="cal" id="cal"></table></div>
+      <div class="legend">
+        <span><i style="background:var(--good-bg);outline:1px solid var(--good)"></i>Favorável</span>
+        <span><i style="background:var(--warn-bg);outline:1px solid var(--warn)"></i>Atenção</span>
+        <span><i style="background:var(--bad-bg);outline:1px solid var(--bad)"></i>Desfavorável</span>
+        <span><i style="background:var(--na)"></i>Sem dados</span>
+      </div>
+      <div class="detail" id="detail"></div>
+    </section>
+  </div>
+  <div class="panel grid" id="tab-radar" role="tabpanel" aria-labelledby="t-radar">
+    <!-- Radar -->
+    <section class="card span-12" aria-labelledby="h-radar">
+      <header><h3 id="h-radar">Radar de chuva</h3><span class="hint" id="radarTime">—</span></header>
+      <div id="map" role="application" aria-label="Mapa com radar de chuva. Toque no mapa para escolher um ponto."></div>
+      <div class="radarbar">
+        <button type="button" id="rPlay">▶ Animar</button>
+        <input type="range" id="rSlider" min="0" max="0" value="0" aria-label="Quadro do radar">
+        <div class="scale" title="Fraca → forte" aria-hidden="true">
+          <span style="background:#88ddee"></span><span style="background:#0099cc"></span><span style="background:#0077aa"></span><span style="background:#005588"></span><span style="background:#ffee00"></span><span style="background:#ffaa00"></span><span style="background:#ff4400"></span><span style="background:#c10000"></span>
+        </div>
+      </div>
+      <p class="hint" style="margin:8px 0 0">Últimas ~2 horas de radar. Toque no mapa para consultar o tempo naquele ponto (útil para talhões fora da cidade).</p>
+    </section>
+  </div>
+  <div class="panel grid" id="tab-previsao" role="tabpanel" aria-labelledby="t-previsao">
+    <!-- 16 dias -->
+    <section class="card span-12" aria-labelledby="h-16">
+      <header><h3 id="h-16">Previsão de 16 dias</h3><span class="hint">Chuva (mm), temperatura (°C) e evapotranspiração ET₀ (mm)</span></header>
+      <div class="chartbox"><canvas id="c16" aria-label="Gráfico da previsão de 16 dias"></canvas></div>
+      <div class="scroll" style="margin-top:14px"><table class="data" id="t16"></table></div>
+    </section>
+    <!-- 48h -->
+    <section class="card span-8" aria-labelledby="h-48">
+      <header><h3 id="h-48">Próximas 48 horas</h3><span class="hint">Temperatura, chance de chuva e vento</span></header>
+      <div class="chartbox"><canvas id="c48" aria-label="Gráfico das próximas 48 horas"></canvas></div>
+    </section>
+    <!-- Modelos -->
+    <section class="card span-4" aria-labelledby="h-mod">
+      <header><h3 id="h-mod">Os modelos concordam?</h3><span class="hint">Chuva prevista (mm)</span></header>
+      <div class="scroll"><table class="data" id="tmod" style="min-width:300px"></table></div>
+      <p class="hint" style="margin:10px 0 0">ECMWF (europeu), GFS (americano) e ICON (alemão). Quando os três concordam, a previsão é mais confiável.</p>
+    </section>
+  </div>
+  <div class="panel grid" id="tab-solo" role="tabpanel" aria-labelledby="t-solo">
+    <!-- Solo -->
+    <section class="card span-5" aria-labelledby="h-soil">
+      <header><h3 id="h-soil">Solo agora</h3><span class="hint">Umidade volumétrica (m³/m³)</span></header>
+      <div class="soil" id="soil"></div>
+      <div class="stats" id="soilT"></div>
+      <p class="soil-note">Referência geral: abaixo de 0,15 seco · 0,15–0,25 moderado · 0,25–0,35 úmido · acima de 0,40 próximo da saturação. Os valores mudam conforme a textura do solo (argiloso retém mais que arenoso).</p>
+    </section>
+    <!-- Balanço -->
+    <section class="card span-7" aria-labelledby="h-bal">
+      <header><h3 id="h-bal">Balanço hídrico</h3><span class="hint">Chuva menos evapotranspiração de referência (ET₀), últimos 30 dias e próximos 16</span></header>
+      <div class="balance" id="balance"></div>
+      <div class="chartbox sm"><canvas id="cbal" aria-label="Gráfico do balanço hídrico"></canvas></div>
+    </section>
+  </div>
+  <div class="panel grid" id="tab-avisos" role="tabpanel" aria-labelledby="t-avisos">
+    <!-- Fontes -->
+    <section class="card span-12" aria-labelledby="h-links">
+      <header><h3 id="h-links">Avisos oficiais e calendário de plantio</h3><span class="hint">Confira sempre antes de decidir</span></header>
+      <div class="links">
+        <a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener"><b>INMET — Alertas</b><span>Avisos de tempestade, geada e onda de calor por município</span></a>
+        <a href="https://www.gov.br/agricultura/pt-br/assuntos/riscos-seguro/programa-nacional-de-zoneamento-agricola-de-risco-climatico" target="_blank" rel="noopener"><b>ZARC — MAPA</b><span>Zoneamento oficial: datas de plantio por cultura, solo e município</span></a>
+        <a href="https://www.agritempo.gov.br/" target="_blank" rel="noopener"><b>Agritempo — Embrapa</b><span>Monitoramento agrometeorológico e balanço hídrico</span></a>
+        <a href="https://www.gov.br/cemaden/pt-br" target="_blank" rel="noopener"><b>CEMADEN</b><span>Monitoramento de seca e desastres naturais</span></a>
+        <a href="https://portal.inmet.gov.br/" target="_blank" rel="noopener"><b>INMET — Portal</b><span>Estações meteorológicas e previsão oficial</span></a>
+        <a id="windyLink" href="https://www.windy.com/" target="_blank" rel="noopener"><b>Windy</b><span>Mapas animados de vento, chuva e nuvens para este ponto</span></a>
+      </div>
+      <p class="hint" style="margin:14px 0 0">Dados: <a href="https://open-meteo.com/" target="_blank" rel="noopener" style="color:inherit">Open-Meteo</a> (previsão, solo, ET₀ e modelos ECMWF/GFS/ICON) · radar <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" style="color:inherit">RainViewer</a> · mapa © OpenStreetMap. As janelas de manejo são uma orientação automática a partir da previsão e não substituem o ZARC, a assistência técnica nem a observação da lavoura.</p>
+    </section>
+
+    <section class="card span-12" aria-labelledby="h-app">
+      <header><h3 id="h-app">Sobre o aplicativo</h3></header>
+      <div class="about">
+        <button class="btn-alt" id="install" type="button" hidden>Instalar na tela inicial</button>
+        <button class="btn-alt" id="refresh" type="button">Atualizar dados agora</button>
+        <a class="btn-alt" href="politica-privacidade.html">Política de privacidade</a>
+      </div>
+      <p class="hint" style="margin:12px 0 0">Funciona sem internet com os últimos dados baixados. A localização é usada só para buscar a previsão e fica guardada apenas neste aparelho.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const fmt = (v, d = 0) => (v == null || isNaN(v)) ? "—" : Number(v).toLocaleString("pt-BR", {minimumFractionDigits: d, maximumFractionDigits: d});
+const sum = a => a.reduce((s, v) => s + (v || 0), 0);
+const avg = a => { const f = a.filter(v => v != null && !isNaN(v)); return f.length ? sum(f) / f.length : null; };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const WD = ["dom","seg","ter","qua","qui","sex","sáb"];
+const dayLabel = t => { const d = new Date(t + "T12:00"); return `${WD[d.getDay()]} ${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`; };
+const store = { get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+
+const WMO = {0:"Céu limpo",1:"Predomínio de sol",2:"Parcialmente nublado",3:"Nublado",45:"Nevoeiro",48:"Nevoeiro com geada",
+ 51:"Garoa fraca",53:"Garoa",55:"Garoa forte",56:"Garoa congelante",57:"Garoa congelante forte",61:"Chuva fraca",63:"Chuva moderada",65:"Chuva forte",
+ 66:"Chuva congelante",67:"Chuva congelante forte",71:"Neve fraca",73:"Neve",75:"Neve forte",77:"Grãos de neve",80:"Pancadas fracas",81:"Pancadas de chuva",
+ 82:"Pancadas fortes",85:"Pancadas de neve",86:"Pancadas de neve fortes",95:"Trovoadas",96:"Trovoadas com granizo",99:"Trovoadas com granizo forte"};
+const dirTxt = d => d == null ? "" : ["N","NE","L","SE","S","SO","O","NO"][Math.round(d / 45) % 8];
+
+const CROPS = {
+  soja:{nome:"Soja", tSolo:20, chuva5:20},
+  milho:{nome:"Milho", tSolo:16, chuva5:20},
+  feijao:{nome:"Feijão", tSolo:18, chuva5:15},
+  trigo:{nome:"Trigo", tSolo:10, tSoloMax:25, chuva5:15},
+  arroz:{nome:"Arroz (sequeiro)", tSolo:20, chuva5:25},
+  algodao:{nome:"Algodão", tSolo:18, chuva5:20},
+  cafe:{nome:"Café (mudas)", tSolo:18, chuva5:20},
+  cana:{nome:"Cana-de-açúcar", tSolo:20, chuva5:20},
+  horta:{nome:"Hortaliças", tSolo:12, tSoloMax:30, chuva5:10}
+};
+
+const state = { loc:null, data:null, models:null, crop: store.get("tl_crop") || "soja", sel:0, charts:{}, days:[] };
+$("#crop").value = state.crop;
+
+function setStatus(msg, err){ const s = $("#status"); s.textContent = msg; s.classList.toggle("err", !!err); }
+
+/* ---------- Busca de município ---------- */
+const UF = {AC:"Acre",AL:"Alagoas",AP:"Amapá",AM:"Amazonas",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MT:"Mato Grosso",MS:"Mato Grosso do Sul",MG:"Minas Gerais",PA:"Pará",PB:"Paraíba",PR:"Paraná",PE:"Pernambuco",PI:"Piauí",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RS:"Rio Grande do Sul",RO:"Rondônia",RR:"Roraima",SC:"Santa Catarina",SP:"São Paulo",SE:"Sergipe",TO:"Tocantins"};
+const norm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+const UFBYNAME = Object.fromEntries(Object.entries(UF).map(([k, v]) => [norm(v), k]));
+
+/* Entende "Cidade - UF", "Cidade, UF", "Cidade/UF", "Cidade (UF)", "Cidade UF", "Cidade, Estado" e coordenadas */
+function parseQuery(raw){
+  const q = raw.trim();
+  const c = q.match(/^(-?\d{1,2}(?:[.,]\d+)?)(?:\s*[;,]\s*|\s+)(-?\d{1,3}(?:[.,]\d+)?)$/);
+  if (c) { const lat = parseFloat(c[1].replace(",", ".")), lon = parseFloat(c[2].replace(",", ".")); if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) return { coords: { lat, lon } }; }
+  let name = q, uf = null;
+  const parts = q.split(/\s*,\s*|\s+[-–]\s+|\s*\/\s*|\s*\(\s*|\s*\)\s*/).filter(Boolean);
+  if (parts.length > 1) {
+    const last = parts[parts.length - 1], up = last.toUpperCase();
+    if (UF[up]) uf = up; else if (UFBYNAME[norm(last)]) uf = UFBYNAME[norm(last)];
+    if (uf) parts.pop();
+    if (parts.length > 1 && /^brasil$/.test(norm(parts[parts.length - 1]))) parts.pop();
+    name = parts.join(" ");
+  } else {
+    const m = q.match(/^(.+?)\s+([A-Za-z]{2})$/);
+    if (m && UF[m[2].toUpperCase()]) { name = m[1]; uf = m[2].toUpperCase(); }
+  }
+  return { name: name.trim(), uf };
+}
+
+async function getJSON(url){ const r = await fetch(url); if (!r.ok) throw new Error("http " + r.status); return r.json(); }
+
+async function geoOpenMeteo(name, br){
+  const j = await getJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=10&language=pt&format=json${br ? "&countryCode=BR" : ""}`);
+  return (j.results || []).map(p => ({ name: p.name, state: p.admin1 || "", cc: p.country_code || "", country: p.country || "", lat: p.latitude, lon: p.longitude }));
+}
+async function geoPhoton(name, uf){
+  const q = name + (uf ? ", " + UF[uf] : "") + ", Brasil";
+  const j = await getJSON(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10&bbox=-74.5,-34.5,-28.5,5.8`);
+  return (j.features || []).filter(f => ["city","town","village","municipality","hamlet","suburb","locality","administrative","county","state_district","district"].includes(f.properties.osm_value) || f.properties.type === "city" || f.properties.type === "district")
+    .map(f => ({ name: f.properties.name, state: f.properties.state || "", cc: (f.properties.countrycode || "").toUpperCase(), country: f.properties.country || "", lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }));
+}
+async function geoNominatim(name, uf){
+  const q = name + (uf ? ", " + UF[uf] : "");
+  const j = await getJSON(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=10&countrycodes=br&accept-language=pt-BR&q=${encodeURIComponent(q)}`);
+  return (j || []).map(p => { const a = p.address || {}; return { name: a.city || a.town || a.village || a.municipality || a.hamlet || p.name || q, state: a.state || "", cc: "BR", country: "Brasil", lat: +p.lat, lon: +p.lon }; });
+}
+
+function showResults(list, msg){
+  const box = $("#results"); box.innerHTML = "";
+  if (msg) { const d = document.createElement("button"); d.type = "button"; d.disabled = true; d.textContent = msg; box.appendChild(d); }
+  for (const p of list) {
+    const b = document.createElement("button"); b.type = "button";
+    b.innerHTML = `<strong></strong> <small></small>`;
+    b.querySelector("strong").textContent = p.name;
+    b.querySelector("small").textContent = [p.state, p.country].filter(Boolean).join(", ");
+    b.addEventListener("click", () => {
+      box.hidden = true; $("#q").value = "";
+      const sig = Object.entries(UF).find(([, v]) => norm(v) === norm(p.state));
+      setLocation({ name: p.name, region: [sig ? sig[0] : p.state, p.cc].filter(Boolean).join(" · "), lat: +(+p.lat).toFixed(4), lon: +(+p.lon).toFixed(4) });
+    });
+    box.appendChild(b);
+  }
+  box.hidden = false;
+}
+
+let qTimer, qSeq = 0;
+$("#q").addEventListener("input", e => {
+  clearTimeout(qTimer);
+  const q = e.target.value.trim();
+  if (q.length < 2) { $("#results").hidden = true; return; }
+  qTimer = setTimeout(() => searchPlace(q), 450);
+});
+$("#q").addEventListener("keydown", e => {
+  if (e.key === "Escape") $("#results").hidden = true;
+  if (e.key === "Enter") { e.preventDefault(); clearTimeout(qTimer); const q = e.target.value.trim(); if (q) searchPlace(q); }
+});
+$("#qGo").addEventListener("click", () => { clearTimeout(qTimer); const q = $("#q").value.trim(); if (q) searchPlace(q); else $("#q").focus(); });
+document.addEventListener("click", e => { if (!e.target.closest(".search") && e.target.id !== "qGo") $("#results").hidden = true; });
+
+async function searchPlace(raw){
+  const seq = ++qSeq;
+  const P = parseQuery(raw);
+  if (P.coords) { $("#results").hidden = true; $("#q").value = ""; setLocation({ name: "Ponto informado", region: "", lat: P.coords.lat, lon: P.coords.lon }); return; }
+  if (!P.name) return;
+  showResults([], "Buscando…");
+  const byUF = list => P.uf ? list.filter(p => norm(p.state) === norm(UF[P.uf])) : list;
+  const dedupe = list => { const seen = new Set(); return list.filter(p => { const k = norm(p.name) + "|" + norm(p.state); if (seen.has(k)) return false; seen.add(k); return true; }); };
+  const variants = [...new Set([P.name, norm(P.name)])];
+  const steps = [];
+  for (const v of variants) steps.push(() => geoOpenMeteo(v, true));
+  steps.push(() => geoPhoton(P.name, P.uf));
+  steps.push(() => geoNominatim(P.name, P.uf));
+  for (const v of variants) steps.push(() => geoOpenMeteo(v, false));
+  let anyOk = false, found = [];
+  for (const step of steps) {
+    try {
+      const r = dedupe(byUF(await step())); anyOk = true;
+      if (r.length) { found = r; break; }
+    } catch {}
+    if (seq !== qSeq) return;
+  }
+  if (seq !== qSeq) return;
+  if (found.length) {
+    found.sort((a, b) => (b.cc === "BR") - (a.cc === "BR") || (norm(b.name) === norm(P.name)) - (norm(a.name) === norm(P.name)));
+    showResults(found.slice(0, 8));
+  } else if (!anyOk) {
+    showResults([], "Sem acesso à internet de busca. Se o arquivo foi aberto dentro do app do Claude, abra-o no navegador (Chrome, Safari, Edge).");
+    setStatus("A busca não conseguiu se conectar. Você também pode tocar no mapa ou digitar coordenadas (ex.: -17.79, -50.92).", true);
+  } else {
+    showResults([], `Não achei "${P.name}"${P.uf ? " em " + P.uf : ""}. Confira a grafia, tente sem a sigla do estado, ou toque no mapa.`);
+  }
+}
+
+$("#geo").addEventListener("click", () => {
+  if (!navigator.geolocation) { setStatus("Este navegador não informa a localização. Busque o município pelo nome.", true); return; }
+  setStatus("Obtendo sua localização…");
+  navigator.geolocation.getCurrentPosition(
+    p => setLocation({ name: "Minha localização", region: "", lat: +p.coords.latitude.toFixed(4), lon: +p.coords.longitude.toFixed(4) }),
+    () => setStatus("Localização negada ou indisponível. Busque o município pelo nome ou toque no mapa.", true),
+    { enableHighAccuracy: true, timeout: 12000 }
+  );
+});
+
+$("#crop").addEventListener("change", e => { state.crop = e.target.value; store.set("tl_crop", state.crop); if (state.data) renderAgro(); });
+
+/* ---------- Carregamento de dados ---------- */
+function setLocation(loc){
+  state.loc = loc; store.set("tl_loc", loc);
+  $("#locName").textContent = loc.name;
+  $("#locMeta").textContent = `${loc.region ? loc.region + " · " : ""}${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`;
+  $("#windyLink").href = `https://www.windy.com/?rain,${loc.lat},${loc.lon},9`;
+  if (map) { map.setView([loc.lat, loc.lon], Math.max(map.getZoom(), 7)); marker.setLatLng([loc.lat, loc.lon]); }
+  load();
+}
+
+async function load(){
+  const {lat, lon} = state.loc;
+  setStatus("Buscando dados…");
+  const key = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+  const cached = store.get("tl_cache");
+  if (cached && cached.key === key && !state.data) { state.data = cached.data; state.models = cached.models; try { renderAll(); } catch {} }
+  const base = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&timezone=auto&wind_speed_unit=kmh`;
+  const main = base + "&past_days=30&forecast_days=16" +
+    "&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,dew_point_2m" +
+    "&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,soil_temperature_0cm,soil_temperature_6cm,soil_temperature_18cm,soil_moisture_0_to_1cm,soil_moisture_1_to_3cm,soil_moisture_3_to_9cm,soil_moisture_9_to_27cm,soil_moisture_27_to_81cm,vapour_pressure_deficit" +
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,precipitation_hours,et0_fao_evapotranspiration,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,sunshine_duration";
+  const mods = base + "&forecast_days=10&daily=precipitation_sum&models=ecmwf_ifs025,gfs_seamless,icon_seamless";
+  try {
+    const [a, b] = await Promise.allSettled([fetch(main).then(r => r.ok ? r.json() : Promise.reject(r.status)), fetch(mods).then(r => r.ok ? r.json() : Promise.reject(r.status))]);
+    if (a.status !== "fulfilled") throw a.reason;
+    state.data = a.value; state.models = b.status === "fulfilled" ? b.value : null;
+    store.set("tl_cache", { key, at: Date.now(), data: state.data, models: state.models });
+    renderAll();
+    const t = new Date();
+    setStatus(`Atualizado às ${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")} · altitude ${fmt(state.data.elevation)} m`);
+  } catch (e) {
+    const c = store.get("tl_cache");
+    if (c && c.key === key) {
+      if (state.data !== c.data) { state.data = c.data; state.models = c.models; renderAll(); }
+      const d = new Date(c.at);
+      $("#status").innerHTML = `<span class="offline">Sem internet</span> mostrando dados salvos em ${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")} às ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+      $("#status").classList.remove("err");
+    } else setStatus("Não foi possível carregar a previsão. Verifique a internet e tente de novo em instantes.", true);
+  }
+}
+
+/* ---------- Índices auxiliares ---------- */
+function prep(){
+  const d = state.data, H = d.hourly, D = d.daily;
+  const today = d.current.time.slice(0, 10);
+  const ti = D.time.indexOf(today);
+  const byDay = {};
+  H.time.forEach((t, i) => { (byDay[t.slice(0,10)] ||= []).push(i); });
+  const nowKey = d.current.time.slice(0, 13) + ":00";
+  let hi = H.time.indexOf(nowKey); if (hi < 0) hi = H.time.findIndex(t => t >= nowKey);
+  return { H, D, ti: ti < 0 ? 30 : ti, byDay, hi: Math.max(0, hi) };
+}
+
+/* ---------- Avaliação agronômica por dia ---------- */
+function evalDay(P, i){
+  const {H, D, byDay} = P, crop = CROPS[state.crop];
+  const day = D.time[i], hrs = byDay[day] || [];
+  const rain = D.precipitation_sum[i] ?? 0, prob = D.precipitation_probability_max[i], tmin = D.temperature_2m_min[i], tmax = D.temperature_2m_max[i];
+  const next5 = sum(D.precipitation_sum.slice(i, i + 5)), past3 = sum(D.precipitation_sum.slice(Math.max(0, i - 3), i));
+  const heavy = Math.max(D.precipitation_sum[i] || 0, D.precipitation_sum[i + 1] || 0);
+  const soilM = avg(hrs.map(h => H.soil_moisture_3_to_9cm[h]));
+  const soilT = avg(hrs.filter(h => { const hh = +H.time[h].slice(11,13); return hh >= 9 && hh <= 17; }).map(h => H.soil_temperature_6cm[h]));
+  const dayHrs = hrs.filter(h => { const hh = +H.time[h].slice(11,13); return hh >= 10 && hh <= 17; });
+  const rhDay = avg(dayHrs.map(h => H.relative_humidity_2m[h]));
+  const out = { day, rain, prob, tmin, tmax, next5, soilM, soilT, rhDay };
+
+  // Plantio
+  const pr = [];
+  let pl = "warn";
+  const moistOk = soilM != null ? soilM >= 0.22 : (past3 + rain) >= 15;
+  const tOk = soilT == null || (soilT >= crop.tSolo && (!crop.tSoloMax || soilT <= crop.tSoloMax));
+  if (soilM != null) pr.push(`Umidade do solo (3–9 cm): ${fmt(soilM, 2)} m³/m³ ${soilM >= 0.22 ? "— boa para germinar" : soilM < 0.15 ? "— solo seco" : "— moderada"}`);
+  else pr.push(`Chuva nos 3 dias anteriores + no dia: ${fmt(past3 + rain, 1)} mm (umidade do solo sem previsão para esta data)`);
+  pr.push(`Chuva prevista nos 5 dias a partir daqui: ${fmt(next5, 1)} mm (ideal ≥ ${crop.chuva5} mm para ${crop.nome})`);
+  if (soilT != null) pr.push(`Temperatura do solo (6 cm, de dia): ${fmt(soilT, 1)} °C (mínimo indicado ${crop.tSolo} °C${crop.tSoloMax ? `, máximo ${crop.tSoloMax} °C` : ""})`);
+  if (heavy >= 40) { pl = "bad"; pr.push(`Chuva forte (${fmt(heavy,0)} mm em 1 dia): risco de erosão, encharcamento e semente lavada`); }
+  else if (tmin != null && tmin <= 3) { pl = "bad"; pr.push(`Mínima de ${fmt(tmin,1)} °C: risco de geada para plântulas`); }
+  else if (soilT != null && soilT < crop.tSolo - 2) { pl = "bad"; pr.push("Solo frio demais: germinação lenta e desuniforme"); }
+  else if (!moistOk && next5 < crop.chuva5 * 0.5) { pl = "bad"; pr.push("Pouca água no solo e pouca chuva à frente: risco de falha na germinação"); }
+  else if (moistOk && next5 >= crop.chuva5 && tOk && rain < 30) { pl = "good"; }
+  out.plantio = { s: pl, r: pr };
+
+  // Colheita
+  const cr = [`Chuva no dia: ${fmt(rain,1)} mm · chance máxima ${fmt(prob)}%`, `Chuva no dia anterior: ${fmt(D.precipitation_sum[i-1], 1)} mm`];
+  if (rhDay != null) cr.push(`Umidade relativa média (10h–17h): ${fmt(rhDay)}%`);
+  let co = "warn";
+  if (rain >= 5 || (prob ?? 0) >= 60) { co = "bad"; cr.push("Chuva provável: grãos úmidos, máquina atolando e perdas de qualidade"); }
+  else if (rain < 1 && (prob ?? 0) < 30 && (D.precipitation_sum[i-1] ?? 0) < 5 && (rhDay == null || rhDay < 75)) { co = "good"; cr.push("Dia seco: bom para colher e secar grãos no campo"); }
+  else cr.push("Condição intermediária: acompanhe a umidade do grão antes de entrar");
+  out.colheita = { s: co, r: cr };
+
+  // Pulverização (horas boas 6h–19h)
+  const good = [];
+  for (const h of hrs) {
+    const hh = +H.time[h].slice(11,13); if (hh < 6 || hh > 19) continue;
+    const w = H.wind_speed_10m[h], t = H.temperature_2m[h], rh = H.relative_humidity_2m[h], pp = H.precipitation_probability[h] ?? 0, p = H.precipitation[h] ?? 0;
+    const p2 = (H.precipitation[h+1] ?? 0) + (H.precipitation[h+2] ?? 0);
+    if (w >= 3 && w <= 10 && t <= 30 && t >= 8 && rh >= 55 && pp < 30 && p < 0.1 && p2 < 0.5) good.push(hh);
+  }
+  const ranges = []; good.forEach(h => { const l = ranges[ranges.length - 1]; if (l && h === l[1] + 1) l[1] = h; else ranges.push([h, h]); });
+  const sp = [`Critério: vento 3–10 km/h, temperatura até 30 °C, umidade ≥ 55%, sem chuva nas 2 h seguintes`];
+  sp.push(good.length ? `Horários bons: ${ranges.map(r => `${String(r[0]).padStart(2,"0")}h–${String(r[1]+1).padStart(2,"0")}h`).join(", ")}` : "Nenhum horário atende a todos os critérios");
+  const wMax = D.wind_speed_10m_max[i]; if (wMax != null) sp.push(`Vento máximo do dia: ${fmt(wMax)} km/h · rajadas ${fmt(D.wind_gusts_10m_max[i])} km/h`);
+  out.pulv = { s: !hrs.length ? "na" : good.length >= 4 ? "good" : good.length >= 2 ? "warn" : "bad", r: sp, n: good.length };
+
+  // Geada
+  const gr = [`Temperatura mínima do ar: ${fmt(tmin,1)} °C`];
+  let ge = "good";
+  if (tmin != null && tmin <= 0) { ge = "bad"; gr.push("Risco alto de geada: proteja mudas e evite plantio"); }
+  else if (tmin != null && tmin <= 3) { ge = "warn"; gr.push("Possível geada em baixadas (relva pode ficar 3–5 °C mais fria que o ar)"); }
+  else gr.push("Sem risco de geada");
+  out.geada = { s: ge, r: gr };
+  return out;
+}
+
+/* ---------- Renderização ---------- */
+function renderAll(){ renderNow(); renderAgro(); renderSoil(); render16(); render48(); renderModels(); renderBalance(); }
+
+function renderNow(){
+  const c = state.data.current, P = prep(), D = P.D, i = P.ti;
+  $("#nowTemp").textContent = `${fmt(c.temperature_2m)}°`;
+  $("#nowDesc").textContent = WMO[c.weather_code] || "—";
+  $("#nowFeels").textContent = `Sensação ${fmt(c.apparent_temperature)}° · máx ${fmt(D.temperature_2m_max[i])}° / mín ${fmt(D.temperature_2m_min[i])}°`;
+  $("#nowTime").textContent = `Hora local ${c.time.slice(11,16)}`;
+  const rain7 = sum(D.precipitation_sum.slice(i, i + 7));
+  const items = [
+    ["Chuva hoje", `${fmt(D.precipitation_sum[i],1)} <small>mm · ${fmt(D.precipitation_probability_max[i])}%</small>`],
+    ["Chuva 7 dias", `${fmt(rain7,0)} <small>mm</small>`],
+    ["Umidade do ar", `${fmt(c.relative_humidity_2m)} <small>%</small>`],
+    ["Vento", `${fmt(c.wind_speed_10m)} <small>km/h ${dirTxt(c.wind_direction_10m)} · raj. ${fmt(c.wind_gusts_10m)}</small>`],
+    ["ET₀ hoje", `${fmt(D.et0_fao_evapotranspiration[i],1)} <small>mm</small>`],
+    ["Índice UV", `${fmt(D.uv_index_max[i],0)}`],
+    ["Ponto de orvalho", `${fmt(c.dew_point_2m)} <small>°C</small>`],
+    ["Sol no dia", `${fmt((D.sunshine_duration[i]||0)/3600,1)} <small>h</small>`]
+  ];
+  $("#nowStats").innerHTML = items.map(([l,v]) => `<div class="stat"><div class="label">${l}</div><div class="v">${v}</div></div>`).join("");
+}
+
+const ST = { good:"Favorável", warn:"Atenção", bad:"Desfavorável", na:"Sem dados" };
+const SHORT = { good:"BOM", warn:"ATN", bad:"RUIM", na:"—" };
+
+function renderAgro(){
+  const P = prep();
+  const crop = CROPS[state.crop];
+  state.days = [];
+  for (let k = 0; k < 14 && P.ti + k < P.D.time.length; k++) state.days.push(evalDay(P, P.ti + k));
+  $("#verCrop").textContent = `Cultura: ${crop.nome}`;
+  const t = state.days[0];
+  const v = (title, o, extra) => `<div class="verdict v-${o.s}"><div class="t"><span class="pill ${o.s === "na" ? "" : o.s}">${ST[o.s]}</span>${title}</div><p>${extra}</p></div>`;
+  $("#verdicts").innerHTML =
+    v("Plantio", t.plantio, t.plantio.r[t.plantio.r.length - 1]) +
+    v("Colheita", t.colheita, t.colheita.r[t.colheita.r.length - 1]) +
+    v("Pulverização", t.pulv, t.pulv.r[1]) +
+    v("Geada", t.geada, t.geada.r[1]);
+  const nextGood = key => { const d = state.days.find(x => x[key].s === "good"); return d ? dayLabel(d.day) : "nenhuma nos próximos 14 dias"; };
+  $("#nextWindows").innerHTML = `<b>Próxima janela favorável</b> — plantio: ${nextGood("plantio")} · colheita: ${nextGood("colheita")} · pulverização: ${nextGood("pulv")}.`;
+
+  const rows = [["Plantio","plantio"],["Colheita","colheita"],["Pulverização","pulv"],["Geada","geada"]];
+  let h = `<thead><tr><th></th>${state.days.map((d, k) => `<th class="day${k === state.sel ? " sel" : ""}">${k === 0 ? "hoje" : dayLabel(d.day)}</th>`).join("")}</tr>
+    <tr><th class="row" style="font-weight:500;color:var(--muted)">Chuva mm</th>${state.days.map(d => `<th class="num" style="color:var(--rain)">${fmt(d.rain, d.rain < 10 ? 1 : 0)}</th>`).join("")}</tr></thead><tbody>`;
+  for (const [lab, key] of rows) {
+    h += `<tr><th class="row">${lab}</th>${state.days.map((d, k) => `<td class="${d[key].s}${k === state.sel ? " sel" : ""}" data-k="${k}" tabindex="0" title="${lab}: ${ST[d[key].s]}">${SHORT[d[key].s]}</td>`).join("")}</tr>`;
+  }
+  $("#cal").innerHTML = h + "</tbody>";
+  $("#cal").querySelectorAll("td").forEach(td => {
+    const pick = () => { state.sel = +td.dataset.k; renderAgro(); };
+    td.addEventListener("click", pick);
+    td.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+  });
+  renderDetail();
+}
+
+function renderDetail(){
+  const d = state.days[state.sel]; if (!d) return;
+  const blk = (t, o) => `<div><h4>${t} — <span style="color:var(--${o.s === "na" ? "muted" : o.s})">${ST[o.s]}</span></h4><ul>${o.r.map(x => `<li>${x}</li>`).join("")}</ul></div>`;
+  $("#detail").innerHTML = `<div class="label" style="margin-bottom:8px">${state.sel === 0 ? "Hoje" : dayLabel(d.day)} · máx ${fmt(d.tmax,0)}° / mín ${fmt(d.tmin,0)}° · chuva ${fmt(d.rain,1)} mm</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">${blk("Plantio", d.plantio)}${blk("Colheita", d.colheita)}${blk("Pulverização", d.pulv)}${blk("Geada", d.geada)}</div>`;
+}
+
+function renderSoil(){
+  const P = prep(), H = P.H, h = P.hi;
+  const layers = [["0–1 cm","soil_moisture_0_to_1cm"],["1–3 cm","soil_moisture_1_to_3cm"],["3–9 cm","soil_moisture_3_to_9cm"],["9–27 cm","soil_moisture_9_to_27cm"],["27–81 cm","soil_moisture_27_to_81cm"]];
+  $("#soil").innerHTML = layers.map(([l, k]) => {
+    const v = H[k] ? H[k][h] : null;
+    const pct = v == null ? 0 : Math.min(100, v / 0.5 * 100);
+    return `<div class="soil-row"><span>${l}</span><div class="soil-track"><div class="soil-fill" style="width:${pct}%"></div></div><span class="num" style="text-align:right">${fmt(v, 2)}</span></div>`;
+  }).join("");
+  const t = [["Solo 0 cm","soil_temperature_0cm"],["Solo 6 cm","soil_temperature_6cm"],["Solo 18 cm","soil_temperature_18cm"]];
+  const vpd = H.vapour_pressure_deficit ? H.vapour_pressure_deficit[h] : null;
+  $("#soilT").innerHTML = t.map(([l,k]) => `<div class="stat"><div class="label">${l}</div><div class="v">${fmt(H[k] ? H[k][h] : null, 1)} <small>°C</small></div></div>`).join("") +
+    `<div class="stat"><div class="label">Déficit de pressão de vapor</div><div class="v">${fmt(vpd, 2)} <small>kPa ${vpd == null ? "" : vpd > 1.6 ? "· estresse" : vpd < 0.4 ? "· ar saturado" : "· adequado"}</small></div></div>`;
+}
+
+function chartBase(){
+  Chart.defaults.font.family = css("--f-body").split(",")[0].replace(/"/g, "") || "system-ui";
+  Chart.defaults.color = css("--muted");
+  Chart.defaults.borderColor = css("--line");
+}
+function mk(id, cfg){ if (state.charts[id]) state.charts[id].destroy(); state.charts[id] = new Chart(document.getElementById(id), cfg); }
+
+function render16(){
+  chartBase();
+  const P = prep(), D = P.D, s = P.ti, idx = [...Array(Math.min(16, D.time.length - s)).keys()].map(k => s + k);
+  const labels = idx.map(i => i === s ? "hoje" : dayLabel(D.time[i]));
+  mk("c16", { type:"bar", data:{ labels, datasets:[
+      { type:"bar", label:"Chuva (mm)", data: idx.map(i => D.precipitation_sum[i]), backgroundColor: css("--rain"), yAxisID:"y", borderRadius:3, order:3 },
+      { type:"line", label:"Máx (°C)", data: idx.map(i => D.temperature_2m_max[i]), borderColor: css("--sun"), backgroundColor: css("--sun"), yAxisID:"y1", tension:.3, pointRadius:2, order:1 },
+      { type:"line", label:"Mín (°C)", data: idx.map(i => D.temperature_2m_min[i]), borderColor: css("--leaf-2"), backgroundColor: css("--leaf-2"), yAxisID:"y1", tension:.3, pointRadius:2, order:1 },
+      { type:"line", label:"ET₀ (mm)", data: idx.map(i => D.et0_fao_evapotranspiration[i]), borderColor: css("--muted"), borderDash:[4,4], yAxisID:"y", pointRadius:0, tension:.3, order:2 }
+    ]},
+    options:{ maintainAspectRatio:false, interaction:{mode:"index", intersect:false}, plugins:{legend:{position:"bottom", labels:{boxWidth:12}}},
+      scales:{ y:{ beginAtZero:true, title:{display:true, text:"mm"}, grid:{color:css("--line")} }, y1:{ position:"right", title:{display:true, text:"°C"}, grid:{display:false} }, x:{grid:{display:false}} } }
+  });
+  const maxR = Math.max(1, ...idx.map(i => D.precipitation_sum[i] || 0));
+  $("#t16").innerHTML = `<thead><tr><th>Dia</th><th>Tempo</th><th>Chuva</th><th>Chance</th><th>Máx</th><th>Mín</th><th>ET₀</th><th>Vento máx</th><th>Rajada</th><th>UV</th></tr></thead><tbody>` +
+    idx.map(i => `<tr><td class="txt">${i === s ? "Hoje" : dayLabel(D.time[i])}</td><td class="txt">${WMO[D.weather_code[i]] || "—"}</td>
+      <td>${fmt(D.precipitation_sum[i],1)} mm<span class="rainbar" style="width:${(D.precipitation_sum[i]||0)/maxR*50}px"></span></td><td>${fmt(D.precipitation_probability_max[i])}%</td>
+      <td>${fmt(D.temperature_2m_max[i])}°</td><td>${fmt(D.temperature_2m_min[i])}°</td><td>${fmt(D.et0_fao_evapotranspiration[i],1)}</td>
+      <td>${fmt(D.wind_speed_10m_max[i])} km/h</td><td>${fmt(D.wind_gusts_10m_max[i])}</td><td>${fmt(D.uv_index_max[i])}</td></tr>`).join("") + "</tbody>";
+}
+
+function render48(){
+  chartBase();
+  const P = prep(), H = P.H, idx = [...Array(48).keys()].map(k => P.hi + k).filter(i => i < H.time.length);
+  const labels = idx.map(i => { const t = H.time[i]; const hh = t.slice(11,13); return hh === "00" ? dayLabel(t.slice(0,10)) : hh + "h"; });
+  mk("c48", { type:"line", data:{ labels, datasets:[
+      { label:"Temperatura (°C)", data: idx.map(i => H.temperature_2m[i]), borderColor: css("--sun"), backgroundColor: css("--sun"), yAxisID:"y", tension:.35, pointRadius:0 },
+      { label:"Vento (km/h)", data: idx.map(i => H.wind_speed_10m[i]), borderColor: css("--leaf-2"), backgroundColor: css("--leaf-2"), yAxisID:"y", tension:.35, pointRadius:0, borderDash:[5,3] },
+      { type:"bar", label:"Chance de chuva (%)", data: idx.map(i => H.precipitation_probability[i]), backgroundColor: css("--rain-soft"), borderColor: css("--rain"), borderWidth:{top:1.5}, yAxisID:"y1", barPercentage:1, categoryPercentage:1 }
+    ]},
+    options:{ maintainAspectRatio:false, interaction:{mode:"index", intersect:false}, plugins:{legend:{position:"bottom", labels:{boxWidth:12}}},
+      scales:{ y:{ title:{display:true, text:"°C · km/h"}, grid:{color:css("--line")} }, y1:{ position:"right", min:0, max:100, title:{display:true, text:"%"}, grid:{display:false} }, x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:12} } } }
+  });
+}
+
+function renderModels(){
+  const m = state.models, el = $("#tmod");
+  if (!m || !m.daily) { el.innerHTML = `<tbody><tr><td class="txt">Comparação de modelos indisponível agora.</td></tr></tbody>`; return; }
+  const D = m.daily, keys = [["ECMWF","precipitation_sum_ecmwf_ifs025"],["GFS","precipitation_sum_gfs_seamless"],["ICON","precipitation_sum_icon_seamless"]];
+  let h = `<thead><tr><th>Dia</th>${keys.map(k => `<th>${k[0]}</th>`).join("")}<th>Acordo</th></tr></thead><tbody>`;
+  D.time.forEach((t, i) => {
+    const v = keys.map(k => D[k[1]] ? D[k[1]][i] : null).filter(x => x != null);
+    const wet = v.filter(x => x >= 2).length;
+    const ag = v.length < 2 ? "—" : (wet === 0 || wet === v.length) ? `<span class="pill good">alto</span>` : `<span class="pill warn">dividido</span>`;
+    h += `<tr><td class="txt">${i === 0 ? "Hoje" : dayLabel(t)}</td>${keys.map(k => `<td>${fmt(D[k[1]] ? D[k[1]][i] : null, 1)}</td>`).join("")}<td class="txt">${ag}</td></tr>`;
+  });
+  el.innerHTML = h + "</tbody>";
+}
+
+function renderBalance(){
+  chartBase();
+  const P = prep(), D = P.D, s = P.ti;
+  const pastR = sum(D.precipitation_sum.slice(0, s)), pastE = sum(D.et0_fao_evapotranspiration.slice(0, s));
+  const futR = sum(D.precipitation_sum.slice(s)), futE = sum(D.et0_fao_evapotranspiration.slice(s));
+  const tile = (l, v, sub, col) => `<div class="stat"><div class="label">${l}</div><div class="v" style="color:${col || "inherit"}">${v} <small>${sub}</small></div></div>`;
+  const bp = pastR - pastE, bf = futR - futE;
+  $("#balance").innerHTML =
+    tile("Chuva últimos 30 dias", fmt(pastR,0), "mm") + tile("ET₀ últimos 30 dias", fmt(pastE,0), "mm") +
+    tile("Saldo passado", (bp >= 0 ? "+" : "") + fmt(bp,0), bp >= 0 ? "mm · excedente" : "mm · déficit", bp >= 0 ? "var(--good)" : "var(--bad)") +
+    tile("Chuva próximos 16 dias", fmt(futR,0), "mm") +
+    tile("Saldo previsto", (bf >= 0 ? "+" : "") + fmt(bf,0), bf >= 0 ? "mm · excedente" : "mm · déficit", bf >= 0 ? "var(--good)" : "var(--bad)");
+  let acc = 0; const cum = D.time.map((_, i) => (acc += (D.precipitation_sum[i] || 0) - (D.et0_fao_evapotranspiration[i] || 0), +acc.toFixed(1)));
+  mk("cbal", { type:"bar", data:{ labels: D.time.map((t,i) => i === s ? "hoje" : dayLabel(t)), datasets:[
+      { type:"line", label:"Saldo acumulado (mm)", data: cum, borderColor: css("--ink"), backgroundColor: css("--ink"), pointRadius:0, tension:.25, yAxisID:"y" },
+      { label:"Chuva − ET₀ do dia (mm)", data: D.time.map((_, i) => +(((D.precipitation_sum[i]||0) - (D.et0_fao_evapotranspiration[i]||0))).toFixed(1)),
+        backgroundColor: D.time.map((_, i) => ((D.precipitation_sum[i]||0) - (D.et0_fao_evapotranspiration[i]||0)) >= 0 ? css("--rain") : css("--sun")), yAxisID:"y", borderRadius:2 }
+    ]},
+    options:{ maintainAspectRatio:false, interaction:{mode:"index", intersect:false}, plugins:{legend:{position:"bottom", labels:{boxWidth:12}}},
+      scales:{ y:{ title:{display:true, text:"mm"}, grid:{color:css("--line")} }, x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:10} } } }
+  });
+}
+
+/* ---------- Radar ---------- */
+let map, marker, frames = [], layers = {}, cur = 0, timer = null, radarHost = "";
+function initMap(lat, lon){
+  if (typeof L === "undefined") { $("#map").innerHTML = `<div class="skeleton">Não foi possível carregar o mapa. Verifique a internet.</div>`; return; }
+  map = L.map("map", { zoomControl:true, attributionControl:true }).setView([lat, lon], 7);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 12, attribution: "© OpenStreetMap" }).addTo(map);
+  marker = L.circleMarker([lat, lon], { radius: 8, color: "#1f4d2b", weight: 3, fillColor: "#fff", fillOpacity: 1 }).addTo(map);
+  map.on("click", e => setLocation({ name: "Ponto no mapa", region: "", lat: +e.latlng.lat.toFixed(4), lon: +e.latlng.lng.toFixed(4) }));
+  loadRadar();
+  setInterval(loadRadar, 10 * 60 * 1000);
+}
+async function loadRadar(){
+  try {
+    const j = await (await fetch("https://api.rainviewer.com/public/weather-maps.json")).json();
+    radarHost = j.host;
+    const nf = [...(j.radar?.past || []), ...(j.radar?.nowcast || [])];
+    Object.values(layers).forEach(l => map.removeLayer(l)); layers = {};
+    frames = nf;
+    if (!frames.length) { $("#radarTime").textContent = "Radar sem quadros no momento"; return; }
+    $("#rSlider").max = frames.length - 1;
+    showFrame(frames.length - 1);
+  } catch { $("#radarTime").textContent = "Radar indisponível agora"; }
+}
+function layerFor(f){
+  if (!layers[f.path]) layers[f.path] = L.tileLayer(`${radarHost}${f.path}/256/{z}/{x}/{y}/2/1_1.png`, { opacity: 0, maxNativeZoom: 7, maxZoom: 12, zIndex: 10, attribution: "Radar © RainViewer" });
+  if (!map.hasLayer(layers[f.path])) layers[f.path].addTo(map);
+  return layers[f.path];
+}
+function showFrame(i){
+  if (!frames.length) return;
+  const prev = frames[cur]; cur = (i + frames.length) % frames.length;
+  const f = frames[cur], ly = layerFor(f); ly.setOpacity(.72);
+  if (prev && prev !== f && layers[prev.path]) layers[prev.path].setOpacity(0);
+  if (frames[cur + 1]) layerFor(frames[cur + 1]);
+  $("#rSlider").value = cur;
+  const d = new Date(f.time * 1000);
+  const ago = Math.round((Date.now() - d) / 60000);
+  $("#radarTime").textContent = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")} · ${ago <= 0 ? "agora" : `há ${ago} min`}`;
+}
+$("#rSlider").addEventListener("input", e => showFrame(+e.target.value));
+$("#rPlay").addEventListener("click", () => {
+  if (timer) { clearInterval(timer); timer = null; $("#rPlay").textContent = "▶ Animar"; showFrame(frames.length - 1); }
+  else { $("#rPlay").textContent = "❚❚ Pausar"; timer = setInterval(() => showFrame(cur + 1), 650); }
+});
+
+/* Re-render de gráficos ao trocar tema */
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (state.data) { render16(); render48(); renderBalance(); } }); } catch {}
+
+/* ---------- Abas ---------- */
+const TABS = ["hoje", "radar", "previsao", "solo", "avisos"];
+function showTab(){
+  const h = location.hash.slice(1), t = TABS.includes(h) ? h : (store.get("tl_tab") || "hoje");
+  TABS.forEach(n => {
+    $("#tab-" + n).hidden = n !== t;
+    const a = $("#t-" + n); if (n === t) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  store.set("tl_tab", t);
+  requestAnimationFrame(() => {
+    if (t === "radar" && map) map.invalidateSize();
+    Object.values(state.charts).forEach(c => { try { c.resize(); } catch {} });
+  });
+}
+document.querySelectorAll(".tabs a").forEach(a => a.addEventListener("click", e => {
+  e.preventDefault();
+  const t = a.getAttribute("href").slice(1);
+  try { history.replaceState(null, "", "#" + t); } catch { location.hash = t; }
+  showTab(); window.scrollTo({ top: 0 });
+}));
+addEventListener("hashchange", showTab);
+showTab();
+
+/* ---------- App instalável ---------- */
+$("#refresh").addEventListener("click", () => state.loc && load());
+let installEvt = null;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; $("#install").hidden = false; });
+$("#install").addEventListener("click", async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch {} installEvt = null; $("#install").hidden = true; });
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+addEventListener("online", () => state.loc && load());
+
+/* ---------- Início ---------- */
+const start = store.get("tl_loc") || { name: "Rio Verde", region: "Goiás · BR", lat: -17.7923, lon: -50.9192 };
+initMap(start.lat, start.lon);
+setLocation(start);
+setInterval(() => state.loc && load(), 30 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
