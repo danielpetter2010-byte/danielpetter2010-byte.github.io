@@ -178,13 +178,52 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
 .btn-alt{padding:10px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;text-decoration:none;font-weight:500}
 .btn-alt:hover{border-color:var(--leaf-2)}
 .abc-card{order:-1}
+/* Alertas */
+.alerts{display:grid;gap:6px;padding-block:4px 6px}
+.alert{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:8px;font-size:14px;line-height:1.4}
+.alert svg{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-top:1px}
+.alert.warn{background:var(--warn-bg);color:var(--ink)} .alert.warn svg{color:var(--warn)}
+.alert.bad{background:var(--bad-bg);color:var(--ink)} .alert.bad svg{color:var(--bad)}
+.alert b{font-weight:700}
+/* Compartilhar */
+.share{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.sh{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;text-decoration:none;font-weight:600;font-size:14px}
+.sh svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.sh:hover{border-color:var(--leaf-2)}
+.sh-wa{background:#1f8f4e;border-color:#1f8f4e;color:#fff}
+.sh-wa:hover{background:#197a42}
+.sh[aria-pressed="true"]{border-color:var(--leaf-2);color:var(--leaf-2)}
+/* Talhões */
+.card > header .btn-alt{padding:7px 12px}
+.tform{background:var(--surface-2);border-radius:8px;padding:14px;margin-bottom:14px}
+.tf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.tform label{display:grid;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.tform input,.tform select{padding:9px 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:15px;min-width:0;width:100%}
+.tform .btn{background:var(--leaf-2);border-color:var(--leaf-2)}
+.tlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.tcard{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px;min-width:0;background:var(--surface)}
+.tcard h4{margin:0;font-family:var(--f-display);font-size:17px}
+.tcard .sub{font-size:12.5px;color:var(--muted)}
+.tdap{display:flex;align-items:baseline;gap:8px}
+.tdap .n{font-family:var(--f-display);font-size:34px;font-weight:800;line-height:1}
+.tbar{height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.tbar i{display:block;height:100%;background:linear-gradient(90deg,var(--leaf-2),#c9a227)}
+.tstage{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.tstats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tstats .stat .v{font-size:16px}
+.tnote{font-size:13px;background:var(--surface-2);border-radius:7px;padding:8px 10px}
+.tact{display:flex;flex-wrap:wrap;gap:6px}
+.tact button{padding:7px 11px;border-radius:7px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;font-size:13.5px}
+.tact button.danger{border-color:var(--bad);color:var(--bad)}
+.tempty{padding:22px;text-align:center;border:1.5px dashed var(--line);border-radius:10px;color:var(--muted)}
+.tempty b{display:block;color:var(--ink);font-family:var(--f-display);font-size:17px;margin-bottom:4px}
 .abc-note{margin:12px 0 0;padding:10px 12px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);font-size:13.5px}
 .abc-note a{color:var(--leaf-2);font-weight:600}
 .offline{display:inline-block;background:var(--warn-bg);color:var(--warn);font-weight:600;border-radius:6px;padding:2px 8px}
 @media (max-width:760px){
   .tabs{position:fixed;top:auto;bottom:0;left:0;right:0;border-bottom:0;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -4px 16px rgba(0,0,0,.06)}
   .tabs-in{gap:0;padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}
-  .tabs a{flex:1 1 0;min-width:0;flex-direction:column;gap:3px;padding:8px 2px 7px;font-size:11px;border-bottom:0;border-top:3px solid transparent;text-align:center;white-space:nowrap}
+  .tabs a{flex:1 1 0;min-width:0;flex-direction:column;gap:3px;padding:8px 1px 7px;font-size:10.5px;letter-spacing:-.01em;border-bottom:0;border-top:3px solid transparent;text-align:center;white-space:nowrap}
   .tabs a[aria-current="page"]{border-top-color:var(--leaf-2)}
   .tabs svg{width:22px;height:22px}
   body{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
@@ -220,6 +259,7 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
 <nav class="tabs" aria-label="Seções do aplicativo">
   <div class="tabs-in">
     <a href="#hoje" id="t-hoje"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 20v-6M12 20V9M17 20v-9"/><path d="M12 9c0-3 2-5 5-5 0 3-2 5-5 5Zm0 0c0-2.4-1.6-4-4-4 0 2.4 1.6 4 4 4Z"/></svg><span>Hoje</span></a>
+    <a href="#talhoes" id="t-talhoes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2Z"/><path d="M9 4v14M15 6v14"/></svg><span>Talhões</span></a>
     <a href="#radar" id="t-radar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 19 6"/></svg><span>Radar</span></a>
     <a href="#previsao" id="t-previsao"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 1 1 .7-7.9A5.5 5.5 0 0 1 18 11a3 3 0 0 1 0 6Z"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2"/></svg><span>Previsão</span></a>
     <a href="#solo" id="t-solo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h18M3 15h18M3 20h18"/><path d="M12 3c2 2.5 3 4 3 5.2A3 3 0 0 1 9 8.2C9 7 10 5.5 12 3Z"/></svg><span>Solo e água</span></a>
@@ -233,6 +273,7 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
     <span class="meta num" id="locMeta"></span>
     <span class="status" id="status">Buscando dados…</span>
   </div>
+  <div class="alerts" id="alerts" role="alert" hidden></div>
 
   <div class="panel grid" id="tab-hoje" role="tabpanel" aria-labelledby="t-hoje">
     <!-- Agora -->
@@ -249,6 +290,12 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
       <header><h3 id="h-ver">Hoje na lavoura</h3><span class="hint" id="verCrop"></span></header>
       <div class="verdicts" id="verdicts"><div class="skeleton">Calculando…</div></div>
       <p class="hint" id="nextWindows" style="margin:12px 0 0"></p>
+      <div class="share" id="share">
+        <a class="sh sh-wa" id="shWa" href="https://wa.me/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.8A8 8 0 1 1 8 19Z"/><path d="M9 9.5c.3 2 2.5 4.3 4.6 4.6l1-1.2 1.8.9c-.3 1-1 1.7-2 1.7-3 0-6.4-3.4-6.4-6.4 0-1 .7-1.7 1.7-2l.9 1.8Z"/></svg>Enviar no WhatsApp</a>
+        <button class="sh" id="shShare" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 11l7.6-3.8M8.2 13l7.6 3.8"/></svg>Compartilhar</button>
+        <button class="sh" id="shCopy" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg><span>Copiar resumo</span></button>
+        <button class="sh" id="shVoice" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4Z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg><span>Ouvir previsão</span></button>
+      </div>
       <p class="abc-note" id="abcNote" hidden>Você está na região atendida pela <b>Fundação ABC</b>. Associados das cooperativas Frísia, Castrolanda e Capal podem conferir as estações meteorológicas locais no <a href="#avisos" data-goto="avisos">smaABC</a>.</p>
     </section>
     <!-- Calendário -->
@@ -262,6 +309,23 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
         <span><i style="background:var(--na)"></i>Sem dados</span>
       </div>
       <div class="detail" id="detail"></div>
+    </section>
+  </div>
+  <div class="panel grid" id="tab-talhoes" role="tabpanel" aria-labelledby="t-talhoes">
+    <section class="card span-12" aria-labelledby="h-tal">
+      <header><h3 id="h-tal">Meus talhões</h3><button class="btn-alt" id="tNew" type="button">+ Novo talhão</button></header>
+      <form class="tform" id="tForm" hidden autocomplete="off">
+        <div class="tf-grid">
+          <label>Nome do talhão<input id="tfNome" type="text" maxlength="40" placeholder="Ex.: Talhão 3 — Baixada" required></label>
+          <label>Cultura<select id="tfCrop"></select></label>
+          <label>Data de plantio<input id="tfData" type="date" required></label>
+          <label>Área (ha, opcional)<input id="tfArea" type="number" min="0" step="0.1" inputmode="decimal" placeholder="Ex.: 25"></label>
+        </div>
+        <p class="hint" id="tfLocal"></p>
+        <div class="about"><button class="btn" id="tfSave" type="submit">Salvar talhão</button><button class="btn-alt" id="tfCancel" type="button">Cancelar</button></div>
+      </form>
+      <div class="tlist" id="tList"></div>
+      <p class="hint" style="margin:14px 0 0">Os talhões ficam salvos só neste aparelho. A fase da lavoura é uma estimativa pelo ciclo típico da cultura e varia com a cultivar; confira sempre no campo.</p>
     </section>
   </div>
   <div class="panel grid" id="tab-radar" role="tabpanel" aria-labelledby="t-radar">
@@ -431,6 +495,13 @@ const CROPS = {
   pastoinv:{nome:"Pastagem de inverno (azevém)", tSolo:8, tSoloMax:25, chuva5:12, geadaTol:true, cat:"Pastagem e floresta"},
   eucalipto:{nome:"Eucalipto (mudas)", tSolo:15, chuva5:20, cat:"Pastagem e floresta"}
 };
+
+/* Ciclo típico até a colheita (dias) e temperatura-base para graus-dia (°C). null = perene/sem ciclo único */
+const CICLO = {soja:[120,10],milho:[140,10],milho2:[130,10],feijao:[90,10],caupi:[75,10],arroz:[120,11],arrozirr:[125,11],sorgo:[115,10],milheto:[100,10],
+  algodao:[170,15],girassol:[110,8],amendoim:[120,10],gergelim:[100,15],trigo:[130,0],aveia:[120,0],cevada:[125,0],triticale:[130,0],canola:[140,5],
+  batata:[110,7],tomate:[120,10],cebola:[150,6],melancia:[85,10],melao:[75,12],horta:[50,5],pastoinv:[null,0],pasto:[null,10],cafe:[null,10],cana:[null,15],
+  mandioca:[null,12],citros:[null,13],banana:[null,14],cacau:[null,15],acai:[null,15],coco:[null,15],pimenta:[null,15],mamao:[null,15],abacaxi:[null,15],
+  manga:[null,15],uva:[null,10],maca:[null,7],ervamate:[null,10],fumo:[null,10],eucalipto:[null,10]};
 
 /* Regiões e culturas mais comuns em cada uma (ordem = mais plantadas primeiro) */
 const REGIOES = {
@@ -706,6 +777,7 @@ function evalDay(P, i){
   if (soilT != null) pr.push(`Temperatura do solo (6 cm, de dia): ${fmt(soilT, 1)} °C (mínimo indicado ${crop.tSolo} °C${crop.tSoloMax ? `, máximo ${crop.tSoloMax} °C` : ""})`);
   if (heavy >= 40) { pl = "bad"; pr.push(`Chuva forte (${fmt(heavy,0)} mm em 1 dia): risco de erosão, encharcamento e semente lavada`); }
   else if (tmin != null && tmin <= frostLim) { pl = "bad"; pr.push(`Mínima de ${fmt(tmin,1)} °C: risco de geada para plântulas`); }
+  else if (Math.min(...[1, 2].map(k => D.temperature_2m_min[i + k] ?? 99)) <= frostLim) { pl = "bad"; pr.push("Risco de geada nos 2 dias seguintes: plântulas recém-emergidas podem ser queimadas"); }
   else if (soilT != null && soilT < crop.tSolo - 2) { pl = "bad"; pr.push("Solo frio demais: germinação lenta e desuniforme"); }
   else if (soilT != null && crop.tSoloMax && soilT > crop.tSoloMax + 3) { pl = "bad"; pr.push(`Solo quente demais para ${crop.nome}: germinação e pegamento prejudicados`); }
   else if (crop.irrigado) { if (tOk && rain < 30) pl = "good"; }
@@ -748,7 +820,239 @@ function evalDay(P, i){
 }
 
 /* ---------- Renderização ---------- */
-function renderAll(){ renderNow(); renderAgro(); renderSoil(); render16(); render48(); renderModels(); renderBalance(); }
+function renderAll(){ renderNow(); renderAgro(); renderSoil(); render16(); render48(); renderModels(); renderBalance(); renderAlerts(); renderShare(); }
+
+/* ---------- Alertas dos próximos 3 dias ---------- */
+const DIAS_EXT = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
+function quando(D, i, ti){ return i === ti ? "hoje" : i === ti + 1 ? "amanhã" : `${DIAS_EXT[new Date(D.time[i] + "T12:00").getDay()]} (${D.time[i].slice(8,10)}/${D.time[i].slice(5,7)})`; }
+function computeAlerts(){
+  const P = prep(), D = P.D, out = {};
+  const put = (k, sev, txt) => { if (!out[k] || (out[k].sev === "warn" && sev === "bad")) out[k] = { sev, txt }; };
+  for (let i = P.ti; i < Math.min(P.ti + 3, D.time.length); i++) {
+    const q = quando(D, i, P.ti), tn = D.temperature_2m_min[i], tx = D.temperature_2m_max[i], r = D.precipitation_sum[i], g = D.wind_gusts_10m_max[i], wc = D.weather_code[i];
+    if (tn != null && tn <= 0) put("geada", "bad", `<b>Geada forte possível ${q}</b>: mínima de ${fmt(tn,0)} °C. Proteja mudas e evite plantar.`);
+    else if (tn != null && tn <= 3) put("geada", "warn", `<b>Risco de geada ${q}</b>: mínima de ${fmt(tn,0)} °C, mais forte em baixadas.`);
+    if (wc === 96 || wc === 99) put("temporal", "bad", `<b>Temporal com risco de granizo ${q}</b>.`);
+    else if (wc === 95) put("temporal", "warn", `<b>Trovoadas ${q}</b>: evite aplicações e trabalho em campo aberto durante a chuva.`);
+    if (g != null && g >= 70) put("vento", "bad", `<b>Rajadas muito fortes ${q}</b>: até ${fmt(g)} km/h.`);
+    else if (g != null && g >= 50) put("vento", "warn", `<b>Vento forte ${q}</b>: rajadas de até ${fmt(g)} km/h. Não pulverize.`);
+    if (r != null && r >= 80) put("chuva", "bad", `<b>Chuva muito forte ${q}</b>: ${fmt(r)} mm previstos. Risco de erosão e alagamento.`);
+    else if (r != null && r >= 50) put("chuva", "warn", `<b>Chuva forte ${q}</b>: ${fmt(r)} mm previstos.`);
+    if (tx != null && tx >= 36) put("calor", "warn", `<b>Calor intenso ${q}</b>: máxima de ${fmt(tx)} °C. Evite pulverizar nas horas quentes.`);
+  }
+  return Object.values(out).sort((a, b) => (b.sev === "bad") - (a.sev === "bad"));
+}
+function renderAlerts(){
+  const list = computeAlerts(), el = $("#alerts");
+  const ico = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20Z"/><path d="M12 10v4M12 17v.5"/></svg>`;
+  el.innerHTML = list.map(a => `<div class="alert ${a.sev}">${ico}<div>${a.txt}</div></div>`).join("");
+  el.hidden = !list.length;
+}
+
+/* ---------- Resumo (WhatsApp, copiar, ouvir) ---------- */
+const APP_URL = "https://danielpetter2010-byte.github.io";
+function windowText(key){
+  const d0 = state.days[0]; if (!d0) return "";
+  if (d0[key].s === "good") {
+    if (key === "pulv") { const h = (d0.pulv.r[1] || "").replace("Horários bons: ", ""); return `boa hoje, ${h}`; }
+    return "favorável hoje";
+  }
+  const k = state.days.findIndex(x => x[key].s === "good");
+  if (k < 0) return "sem janela boa nos próximos 14 dias";
+  const D = prep().D, ti = prep().ti;
+  return `próxima janela ${quando(D, ti + k, ti)}`;
+}
+function buildSummary(voice){
+  if (!state.data || !state.days.length) return "";
+  const P = prep(), D = P.D, i = P.ti, c = state.data.current, crop = CROPS[state.crop];
+  const loc = state.loc, uf = ufOf(loc);
+  const rain7 = sum(D.precipitation_sum.slice(i, i + 7));
+  const wet = []; for (let k = i; k < Math.min(i + 7, D.time.length); k++) if ((D.precipitation_sum[k] || 0) >= 2) wet.push(k);
+  const alerts = computeAlerts().map(a => a.txt.replace(/<[^>]+>/g, ""));
+  if (voice) {
+    let t = `Previsão para ${loc.name}. Agora faz ${fmt(c.temperature_2m)} graus, ${(WMO[c.weather_code] || "").toLowerCase()}. `;
+    t += `Hoje a máxima é de ${fmt(D.temperature_2m_max[i])} e a mínima de ${fmt(D.temperature_2m_min[i])} graus, com ${fmt(D.precipitation_sum[i])} milímetros de chuva. `;
+    t += wet.length ? `Nos próximos sete dias, são esperados ${fmt(rain7)} milímetros, com chuva ${wet.map(k => quando(D, k, i)).join(", ").replace(/ \(\d+\/\d+\)/g, "")}. ` : `Não há chuva significativa prevista para os próximos sete dias. `;
+    if (alerts.length) t += `Atenção: ${alerts.join(" ").replace(/km\/h/g, "quilômetros por hora").replace(/°C/g, "graus").replace(/ mm/g, " milímetros").replace(/ \(\d+\/\d+\)/g, "")} `;
+    t += `Para ${crop.nome}: plantio, ${windowText("plantio")}. Colheita, ${windowText("colheita")}. Pulverização, ${windowText("pulv").replace(/(\d+)h–(\d+)h/g, "das $1 às $2 horas")}.`;
+    return t.replace(/ \(\d+\/\d+\)/g, "").replace(/\s+/g, " ");
+  }
+  const L = [];
+  L.push(`🌱 *Tempo da Lavoura — ${loc.name}${uf ? " (" + uf + ")" : ""}*`);
+  L.push(`Agora: ${fmt(c.temperature_2m)} °C, ${(WMO[c.weather_code] || "").toLowerCase()}`);
+  L.push(`Hoje: máx ${fmt(D.temperature_2m_max[i])}° / mín ${fmt(D.temperature_2m_min[i])}° · chuva ${fmt(D.precipitation_sum[i], 1)} mm (${fmt(D.precipitation_probability_max[i])}%)`);
+  L.push(`🌧️ Próximos 7 dias: ${fmt(rain7)} mm${wet.length ? " — " + wet.map(k => `${dayLabel(D.time[k])} ${fmt(D.precipitation_sum[k])} mm`).join(", ") : " (sem chuva significativa)"}`);
+  if (alerts.length) { L.push(""); L.push("⚠️ *Alertas*"); alerts.forEach(a => L.push("• " + a)); }
+  L.push(""); L.push(`*${crop.nome}*`);
+  L.push(`• Plantio: ${windowText("plantio")}`);
+  L.push(`• Colheita: ${windowText("colheita")}`);
+  L.push(`• Pulverização: ${windowText("pulv")}`);
+  L.push(""); L.push(`Previsão completa: ${APP_URL}`);
+  return L.join("\n");
+}
+function renderShare(){
+  const txt = buildSummary(false); if (!txt) return;
+  $("#shWa").href = "https://wa.me/?text=" + encodeURIComponent(txt);
+}
+$("#shCopy").addEventListener("click", async () => {
+  const txt = buildSummary(false), lab = $("#shCopy span");
+  try { await navigator.clipboard.writeText(txt); lab.textContent = "Resumo copiado"; }
+  catch { const ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); lab.textContent = "Resumo copiado"; } catch { lab.textContent = "Não foi possível copiar"; } ta.remove(); }
+  setTimeout(() => lab.textContent = "Copiar resumo", 2500);
+});
+if (navigator.share) {
+  $("#shShare").hidden = false;
+  $("#shShare").addEventListener("click", () => { navigator.share({ title: "Tempo da Lavoura", text: buildSummary(false) }).catch(() => {}); });
+}
+if ("speechSynthesis" in window) {
+  const vb = $("#shVoice"); vb.hidden = false;
+  vb.addEventListener("click", () => {
+    const ss = window.speechSynthesis;
+    if (ss.speaking) { ss.cancel(); return; }
+    const u = new SpeechSynthesisUtterance(buildSummary(true));
+    u.lang = "pt-BR"; u.rate = 0.95;
+    const v = ss.getVoices().find(x => /pt[-_]BR/i.test(x.lang)) || ss.getVoices().find(x => /^pt/i.test(x.lang)); if (v) u.voice = v;
+    u.onstart = () => { vb.setAttribute("aria-pressed", "true"); vb.querySelector("span").textContent = "Parar"; };
+    u.onend = u.onerror = () => { vb.removeAttribute("aria-pressed"); vb.querySelector("span").textContent = "Ouvir previsão"; };
+    ss.speak(u);
+  });
+}
+
+/* ---------- Talhões e caderno de campo ---------- */
+const tStore = { all(){ return store.get("tl_talhoes") || []; }, save(l){ store.set("tl_talhoes", l); } };
+const tData = {};   // dados meteorológicos por talhão (memória)
+let tEditing = null, tDelArm = null;
+const localISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const brDate = iso => `${iso.slice(8,10)}/${iso.slice(5,7)}/${iso.slice(0,4)}`;
+function cropOptions(sel){
+  const cats = [...new Set(Object.values(CROPS).map(c => c.cat))];
+  return cats.map(c => `<optgroup label="${c}">${Object.keys(CROPS).filter(k => CROPS[k].cat === c).map(k => `<option value="${k}"${k === sel ? " selected" : ""}>${CROPS[k].nome}</option>`).join("")}</optgroup>`).join("");
+}
+function openForm(t){
+  tEditing = t ? t.id : null;
+  $("#tfNome").value = t ? t.nome : "";
+  $("#tfCrop").innerHTML = cropOptions(t ? t.crop : state.crop);
+  $("#tfData").value = t ? t.plantio : localISO(new Date());
+  $("#tfArea").value = t && t.area ? t.area : "";
+  const L = t || state.loc;
+  $("#tfLocal").innerHTML = t ? `Local: <b>${escapeHtml(t.local)}</b> (${t.lat.toFixed(3)}, ${t.lon.toFixed(3)})` : `Local: <b>${escapeHtml(L.name)}</b> — o local escolhido no topo. Para cadastrar outro lugar, busque o município ou toque no mapa antes.`;
+  $("#tfSave").textContent = t ? "Salvar alterações" : "Salvar talhão";
+  $("#tForm").hidden = false; $("#tfNome").focus();
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+$("#tNew").addEventListener("click", () => openForm(null));
+$("#tfCancel").addEventListener("click", () => { $("#tForm").hidden = true; tEditing = null; });
+$("#tForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const nome = $("#tfNome").value.trim(), plantio = $("#tfData").value;
+  if (!nome || !plantio) return;
+  const list = tStore.all(), area = parseFloat($("#tfArea").value) || null, crop = $("#tfCrop").value;
+  if (tEditing) {
+    const t = list.find(x => x.id === tEditing);
+    if (t) { if (t.plantio !== plantio) delete tData[t.id]; Object.assign(t, { nome, crop, plantio, area }); }
+  } else {
+    const L = state.loc;
+    list.push({ id: "t" + Date.now().toString(36), nome, crop, plantio, area, lat: L.lat, lon: L.lon, local: L.name, region: L.region || "" });
+  }
+  tStore.save(list); $("#tForm").hidden = true; tEditing = null; renderTalhoes();
+});
+
+async function fetchTalhao(t){
+  const today = new Date(), pd = new Date(t.plantio + "T12:00");
+  const days = Math.max(0, Math.floor((today - pd) / 864e5));
+  const daily = "precipitation_sum,temperature_2m_max,temperature_2m_min,et0_fao_evapotranspiration";
+  const base = `latitude=${t.lat}&longitude=${t.lon}&timezone=auto&daily=${daily}`;
+  const map = {};
+  const add = j => { if (!j || !j.daily) return; j.daily.time.forEach((d, i) => {
+    const v = { r: j.daily.precipitation_sum[i], tx: j.daily.temperature_2m_max[i], tn: j.daily.temperature_2m_min[i], e: j.daily.et0_fao_evapotranspiration[i] };
+    if (v.r != null || v.tx != null) map[d] = v; }); };
+  if (days > 85) {
+    try { add(await getJSON(`https://archive-api.open-meteo.com/v1/archive?${base}&start_date=${t.plantio}&end_date=${localISO(new Date(Date.now() - 6 * 864e5))}`)); } catch {}
+  }
+  add(await getJSON(`https://api.open-meteo.com/v1/forecast?${base}&past_days=${Math.min(92, days + 1)}&forecast_days=16`));
+  return { at: Date.now(), map };
+}
+function calcTalhao(t, data){
+  const today = localISO(new Date()), [ciclo, tb] = CICLO[t.crop] || [null, 10];
+  const dap = Math.floor((new Date(today + "T12:00") - new Date(t.plantio + "T12:00")) / 864e5);
+  const res = { dap, ciclo, tb, chuva: null, et: null, gd: null, next7: null, colher: null, faltam: 0 };
+  if (!data) return res;
+  const dates = Object.keys(data.map).sort();
+  let r = 0, e = 0, gd = 0, n = 0, n7 = 0;
+  for (const d of dates) {
+    const v = data.map[d];
+    if (d >= t.plantio && d < today) { r += v.r || 0; e += v.e || 0; if (v.tx != null && v.tn != null) gd += Math.max(0, (v.tx + v.tn) / 2 - tb); n++; }
+    if (d >= today && n7 < 7) { res.next7 = (res.next7 || 0) + (v.r || 0); n7++; }
+  }
+  const missing = Math.max(0, dap) - n;
+  Object.assign(res, { chuva: r, et: e, gd, faltam: missing });
+  // janela seca para colher: 2 dias seguidos com menos de 1 mm a partir de hoje
+  if (ciclo && dap >= ciclo * 0.85) {
+    const fut = dates.filter(d => d >= today);
+    for (let k = 0; k + 1 < fut.length; k++) if ((data.map[fut[k]].r || 0) < 1 && (data.map[fut[k + 1]].r || 0) < 1 && (k === 0 || (data.map[fut[k - 1]].r || 0) < 5)) { res.colher = fut[k]; break; }
+  }
+  return res;
+}
+function fase(p){
+  if (p < 0.12) return "Germinação e estabelecimento";
+  if (p < 0.45) return "Desenvolvimento vegetativo";
+  if (p < 0.62) return "Florescimento";
+  if (p < 0.85) return "Enchimento de grãos/frutos";
+  if (p < 1) return "Maturação";
+  return "Ponto de colheita (confira a umidade do grão)";
+}
+function talhaoCard(t){
+  const c = CROPS[t.crop] || { nome: t.crop }, data = tData[t.id], R = calcTalhao(t, data);
+  const head = `<div><h4>${escapeHtml(t.nome)}</h4><div class="sub">${c.nome}${t.area ? ` · ${fmt(t.area,1)} ha` : ""} · ${escapeHtml(t.local)}</div></div>`;
+  const acts = `<div class="tact"><button type="button" data-act="ver" data-id="${t.id}">Ver previsão aqui</button><button type="button" data-act="edit" data-id="${t.id}">Editar</button><button type="button" data-act="del" data-id="${t.id}" class="${tDelArm === t.id ? "danger" : ""}">${tDelArm === t.id ? "Toque de novo para excluir" : "Excluir"}</button></div>`;
+  if (R.dap < 0) return `<article class="tcard">${head}<div class="tnote">Plantio previsto para ${brDate(t.plantio)}, daqui a ${-R.dap} dia${R.dap === -1 ? "" : "s"}. Veja as janelas de plantio na aba Hoje.</div>${acts}</article>`;
+  let prog = "";
+  if (R.ciclo) {
+    const p = R.dap / R.ciclo, est = new Date(new Date(t.plantio + "T12:00").getTime() + R.ciclo * 864e5);
+    prog = `<div class="tbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(100, Math.round(p * 100))}"><i style="width:${Math.min(100, p * 100)}%"></i></div>
+      <div class="tstage"><span><b style="color:var(--ink)">${fase(p)}</b></span><span>colheita estimada ~ ${String(est.getDate()).padStart(2,"0")}/${String(est.getMonth()+1).padStart(2,"0")}</span></div>`;
+  } else prog = `<div class="tstage"><span>Cultura perene ou sem ciclo único: acompanhe chuva e graus-dia.</span></div>`;
+  const bal = R.chuva != null ? R.chuva - R.et : null;
+  const stats = data ? `<div class="tstats">
+      <div class="stat"><div class="label">Chuva desde o plantio</div><div class="v">${fmt(R.chuva)} <small>mm</small></div></div>
+      <div class="stat"><div class="label">Chuva − ET₀</div><div class="v" style="color:${bal >= 0 ? "var(--good)" : "var(--bad)"}">${bal >= 0 ? "+" : ""}${fmt(bal)} <small>mm</small></div></div>
+      <div class="stat"><div class="label">Graus-dia (base ${R.tb} °C)</div><div class="v">${fmt(R.gd)} <small>°C·dia</small></div></div>
+      <div class="stat"><div class="label">Chuva próx. 7 dias</div><div class="v">${fmt(R.next7)} <small>mm</small></div></div>
+    </div>` : `<div class="tnote">Carregando chuva e temperatura desde o plantio…</div>`;
+  let note = "";
+  if (data && R.faltam > 3) note += `<div class="tnote">Faltam dados de ${R.faltam} dias no acumulado (plantio antigo ou falha na consulta).</div>`;
+  if (R.ciclo && R.dap >= R.ciclo * 0.85) note += `<div class="tnote">${R.colher ? `Próxima janela seca para colher: <b>${R.colher === localISO(new Date()) ? "hoje" : dayLabel(R.colher)}</b> (2 dias seguidos sem chuva).` : "Sem janela seca de 2 dias nos próximos 16 dias."}</div>`;
+  return `<article class="tcard">${head}<div class="tdap"><span class="n num">${R.dap}</span><span>dias após o plantio <span class="sub">(${brDate(t.plantio)})</span></span></div>${prog}${stats}${note}${acts}</article>`;
+}
+function renderTalhoes(){
+  const list = tStore.all(), el = $("#tList");
+  if (!list.length) { el.innerHTML = `<div class="tempty"><b>Nenhum talhão cadastrado</b>Cadastre cada área com a cultura e a data de plantio para acompanhar dias após o plantio, chuva acumulada, graus-dia, fase estimada e a janela de colheita.<div style="margin-top:12px"><button class="btn-alt" type="button" data-act="new">+ Cadastrar o primeiro talhão</button></div></div>`; return; }
+  el.innerHTML = list.map(talhaoCard).join("");
+  for (const t of list) {
+    const d = tData[t.id];
+    if (!d || Date.now() - d.at > 3600e3) {
+      if (d && d.loading) continue;
+      tData[t.id] = Object.assign(d || {}, { loading: true, at: d ? d.at : 0 });
+      fetchTalhao(t).then(r => { tData[t.id] = r; renderTalhoes(); }).catch(() => { if (tData[t.id]) tData[t.id].loading = false; });
+    }
+  }
+}
+$("#tList").addEventListener("click", e => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const act = b.dataset.act, list = tStore.all(), t = list.find(x => x.id === b.dataset.id);
+  if (act === "new") return openForm(null);
+  if (!t) return;
+  if (act === "edit") { tDelArm = null; openForm(t); window.scrollTo({ top: 0 }); }
+  if (act === "del") {
+    if (tDelArm !== t.id) { tDelArm = t.id; renderTalhoes(); setTimeout(() => { if (tDelArm === t.id) { tDelArm = null; renderTalhoes(); } }, 5000); return; }
+    tStore.save(list.filter(x => x.id !== t.id)); delete tData[t.id]; tDelArm = null; renderTalhoes();
+  }
+  if (act === "ver") {
+    state.crop = t.crop; store.set("tl_crop", t.crop);
+    setLocation({ name: t.local, region: t.region, lat: t.lat, lon: t.lon });
+    $("#t-hoje").click();
+  }
+});
 
 function renderNow(){
   const c = state.data.current, P = prep(), D = P.D, i = P.ti;
@@ -954,7 +1258,7 @@ $("#rPlay").addEventListener("click", () => {
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (state.data) { render16(); render48(); renderBalance(); } }); } catch {}
 
 /* ---------- Abas ---------- */
-const TABS = ["hoje", "radar", "previsao", "solo", "avisos"];
+const TABS = ["hoje", "talhoes", "radar", "previsao", "solo", "avisos"];
 function showTab(){
   const h = location.hash.slice(1), t = TABS.includes(h) ? h : (store.get("tl_tab") || "hoje");
   TABS.forEach(n => {
@@ -964,6 +1268,7 @@ function showTab(){
   store.set("tl_tab", t);
   requestAnimationFrame(() => {
     if (t === "radar" && map) map.invalidateSize();
+    if (t === "talhoes") renderTalhoes();
     Object.values(state.charts).forEach(c => { try { c.resize(); } catch {} });
   });
 }
