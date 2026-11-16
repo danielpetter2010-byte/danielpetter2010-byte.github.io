@@ -361,6 +361,14 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 40px}
       <div class="scroll"><table class="data" id="tmod" style="min-width:300px"></table></div>
       <p class="hint" style="margin:10px 0 0">ECMWF (europeu), GFS (americano) e ICON (alemão). Quando os três concordam, a previsão é mais confiável.</p>
     </section>
+    <!-- Verificação -->
+    <section class="card span-12" aria-labelledby="h-ver7">
+      <header><h3 id="h-ver7">A previsão acertou?</h3><span class="hint">Últimos 7 dias: o que foi previsto na véspera e 3 dias antes, e o que ocorreu</span></header>
+      <div class="balance" id="verSum"><div class="skeleton">Carregando a comparação…</div></div>
+      <div class="chartbox sm"><canvas id="cver" aria-label="Gráfico de chuva prevista e ocorrida"></canvas></div>
+      <div class="scroll" style="margin-top:14px"><table class="data" id="tver"></table></div>
+      <p class="hint" style="margin:10px 0 0">"Ocorrido" é a estimativa por reanálise (ERA5, que combina estações, satélite e modelos) ou, nos dias mais recentes, pela análise mais atual do modelo. Não é medição de pluviômetro: chuvas isoladas de verão podem ter caído na sua propriedade e não aparecer aqui, ou o contrário.</p>
+    </section>
   </div>
   <div class="panel grid" id="tab-solo" role="tabpanel" aria-labelledby="t-solo">
     <!-- Solo -->
@@ -726,6 +734,7 @@ async function load(){
     state.data = a.value; state.models = b.status === "fulfilled" ? b.value : null;
     store.set("tl_cache", { key, at: Date.now(), data: state.data, models: state.models });
     renderAll();
+    loadVerif();
     const t = new Date();
     setStatus(`Atualizado às ${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")} · altitude ${fmt(state.data.elevation)} m`);
   } catch (e) {
@@ -821,6 +830,70 @@ function evalDay(P, i){
 
 /* ---------- Renderização ---------- */
 function renderAll(){ renderNow(); renderAgro(); renderSoil(); render16(); render48(); renderModels(); renderBalance(); renderAlerts(); renderShare(); }
+
+/* ---------- A previsão acertou? (previsto x ocorrido, últimos 7 dias) ---------- */
+let verif = null;
+async function loadVerif(){
+  const L = state.loc, key = `${L.lat.toFixed(3)},${L.lon.toFixed(3)}`;
+  if (verif && verif.key === key && Date.now() - verif.at < 3 * 3600e3) { renderVerif(); return; }
+  const tz = "&timezone=auto";
+  const hv = "precipitation,precipitation_previous_day1,precipitation_previous_day3,temperature_2m,temperature_2m_previous_day1,temperature_2m_previous_day3";
+  const today = localISO(new Date()), start = localISO(new Date(Date.now() - 8 * 864e5)), yest = localISO(new Date(Date.now() - 864e5));
+  const [pr, ar] = await Promise.allSettled([
+    getJSON(`https://previous-runs-api.open-meteo.com/v1/forecast?latitude=${L.lat}&longitude=${L.lon}${tz}&past_days=8&forecast_days=1&hourly=${hv}`),
+    getJSON(`https://archive-api.open-meteo.com/v1/archive?latitude=${L.lat}&longitude=${L.lon}${tz}&start_date=${start}&end_date=${yest}&daily=precipitation_sum,temperature_2m_max,temperature_2m_min`)
+  ]);
+  if (state.loc !== L) return;
+  if (pr.status !== "fulfilled" || !pr.value.hourly) { $("#verSum").innerHTML = `<div class="skeleton">Não foi possível carregar a comparação agora. Tente de novo mais tarde.</div>`; return; }
+  // agrega por dia
+  const H = pr.value.hourly, days = {};
+  H.time.forEach((t, i) => { const d = t.slice(0, 10); (days[d] ||= []).push(i); });
+  const agg = (idx, k, f) => { const v = idx.map(i => H[k] ? H[k][i] : null).filter(x => x != null); return v.length >= 20 ? f(v) : null; };
+  const A = ar.status === "fulfilled" && ar.value.daily ? ar.value.daily : null;
+  const rows = [];
+  for (const d of Object.keys(days).sort()) {
+    if (d >= today) continue;
+    const idx = days[d];
+    const r = { d,
+      p1: agg(idx, "precipitation_previous_day1", sum), p3: agg(idx, "precipitation_previous_day3", sum),
+      tx1: agg(idx, "temperature_2m_previous_day1", a => Math.max(...a)), tn1: agg(idx, "temperature_2m_previous_day1", a => Math.min(...a)),
+      tx3: agg(idx, "temperature_2m_previous_day3", a => Math.max(...a)),
+      o: agg(idx, "precipitation", sum), ox: agg(idx, "temperature_2m", a => Math.max(...a)), on: agg(idx, "temperature_2m", a => Math.min(...a)), src: "análise" };
+    if (A) { const k = A.time.indexOf(d); if (k >= 0 && A.precipitation_sum[k] != null) { r.o = A.precipitation_sum[k]; r.ox = A.temperature_2m_max[k]; r.on = A.temperature_2m_min[k]; r.src = "ERA5"; } }
+    rows.push(r);
+  }
+  verif = { key, at: Date.now(), rows: rows.slice(-7) };
+  renderVerif();
+}
+function renderVerif(){
+  if (!verif || !verif.rows.length) return;
+  chartBase();
+  const R = verif.rows, ok = x => x != null;
+  const wet = x => x >= 1;
+  const hit = R.filter(r => ok(r.p1) && ok(r.o));
+  const acertos = hit.filter(r => wet(r.p1) === wet(r.o)).length;
+  const errChuva = hit.length ? sum(hit.map(r => Math.abs(r.p1 - r.o))) / hit.length : null;
+  const tt = R.filter(r => ok(r.tx1) && ok(r.ox)), vies = tt.length ? sum(tt.map(r => r.ox - r.tx1)) / tt.length : null;
+  const errTx = tt.length ? sum(tt.map(r => Math.abs(r.ox - r.tx1))) / tt.length : null;
+  const tot = (k) => sum(R.map(r => r[k] || 0));
+  const viesTxt = vies == null ? "" : Math.abs(vies) < 0.7 ? "sem tendência clara" : vies > 0 ? `dias ${fmt(vies,1)} °C mais quentes que o previsto` : `dias ${fmt(-vies,1)} °C mais frios que o previsto`;
+  const tile = (l, v, sub, col) => `<div class="stat"><div class="label">${l}</div><div class="v" style="color:${col || "inherit"}">${v} <small>${sub}</small></div></div>`;
+  $("#verSum").innerHTML =
+    tile("Acertou se ia chover", `${acertos}/${hit.length}`, "dias", acertos >= hit.length - 1 ? "var(--good)" : acertos >= hit.length / 2 ? "var(--warn)" : "var(--bad)") +
+    tile("Erro médio da chuva", fmt(errChuva, 1), "mm/dia (previsão da véspera)") +
+    tile("Chuva total", `${fmt(tot("o"))}`, `mm ocorridos · ${fmt(tot("p1"))} previstos na véspera`) +
+    tile("Erro médio da máxima", `${fmt(errTx, 1)}`, `°C · ${viesTxt}`);
+  mk("cver", { type:"bar", data:{ labels: R.map(r => dayLabel(r.d)), datasets:[
+      { label:"Previsto 3 dias antes (mm)", data: R.map(r => r.p3), backgroundColor: css("--rain-soft"), borderColor: css("--rain"), borderWidth:1, borderRadius:2 },
+      { label:"Previsto na véspera (mm)", data: R.map(r => r.p1), backgroundColor: css("--muted"), borderRadius:2 },
+      { label:"Ocorrido (mm)", data: R.map(r => r.o), backgroundColor: css("--rain"), borderRadius:2 }
+    ]}, options:{ maintainAspectRatio:false, interaction:{mode:"index", intersect:false}, plugins:{legend:{position:"bottom", labels:{boxWidth:12}}},
+      scales:{ y:{ beginAtZero:true, title:{display:true, text:"mm"}, grid:{color:css("--line")} }, x:{ grid:{display:false} } } } });
+  const chip = r => !ok(r.p1) || !ok(r.o) ? "—" : wet(r.p1) === wet(r.o) && Math.abs(r.p1 - r.o) < Math.max(5, r.o * 0.5) ? `<span class="pill good">acertou</span>` : wet(r.p1) === wet(r.o) ? `<span class="pill warn">volume errado</span>` : `<span class="pill bad">errou</span>`;
+  $("#tver").innerHTML = `<thead><tr><th>Dia</th><th>Chuva prev. 3 dias antes</th><th>Chuva prev. véspera</th><th>Chuva ocorrida</th><th>Máx prev. véspera</th><th>Máx ocorrida</th><th>Mín prev. véspera</th><th>Mín ocorrida</th><th>Chuva</th></tr></thead><tbody>` +
+    R.map(r => `<tr><td class="txt">${dayLabel(r.d)}</td><td>${fmt(r.p3,1)} mm</td><td>${fmt(r.p1,1)} mm</td><td><b>${fmt(r.o,1)} mm</b></td>
+      <td>${fmt(r.tx1,0)}°</td><td><b>${fmt(r.ox,0)}°</b></td><td>${fmt(r.tn1,0)}°</td><td><b>${fmt(r.on,0)}°</b></td><td class="txt">${chip(r)}</td></tr>`).join("") + "</tbody>";
+}
 
 /* ---------- Alertas dos próximos 3 dias ---------- */
 const DIAS_EXT = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
@@ -1255,7 +1328,7 @@ $("#rPlay").addEventListener("click", () => {
 });
 
 /* Re-render de gráficos ao trocar tema */
-try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (state.data) { render16(); render48(); renderBalance(); } }); } catch {}
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (state.data) { render16(); render48(); renderBalance(); renderVerif(); } }); } catch {}
 
 /* ---------- Abas ---------- */
 const TABS = ["hoje", "talhoes", "radar", "previsao", "solo", "avisos"];
